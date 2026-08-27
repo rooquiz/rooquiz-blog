@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "next dev -p 8200",
     "sync": "tsx scripts/sync-content.mts",
+    "publish:example": "tsx scripts/publish-example.mts",
     "build": "pnpm sync && next build",
     "start": "next start -p 8200",
     "lint": "eslint .",

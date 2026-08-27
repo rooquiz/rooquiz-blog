@@ -44,6 +44,10 @@ function MdxImage({ src, alt = '', ...props }: ComponentPropsWithoutRef<'img'>) 
     return <img src={source} alt={alt} loading="lazy" {...props} />
   }
 
+  // next/image 要求给 width/height，但 MDX 里的 ![]() 语法带不了尺寸。
+  // 这里给的是占位比例，靠 height:auto 让浏览器拿到真实图后按固有比例显示——
+  // 否则任何非 1200×630 的图都会被纵向拉伸。代价是加载完成前预留的高度不准（轻微 CLS）；
+  // 要彻底消除得在发布时把尺寸一起写进元数据，首版不值得。
   return (
     <Image
       src={source}
@@ -52,6 +56,7 @@ function MdxImage({ src, alt = '', ...props }: ComponentPropsWithoutRef<'img'>) 
       height={630}
       sizes="(max-width: 768px) 100vw, 768px"
       className="rounded-[var(--radius)]"
+      style={{ width: '100%', height: 'auto' }}
     />
   )
 }

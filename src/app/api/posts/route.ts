@@ -104,8 +104,12 @@ export async function POST(request: Request) {
   }
 
   // 只有已发布的内容变化才值得重建；草稿改动不影响线上产物
-  const shouldDeploy = input.deploy && (input.status === 'published' || existing?.status === 'published')
-  const deploy = shouldDeploy ? await triggerDeploy() : { triggered: false, reason: 'not a published change' }
+  const affectsLiveSite = input.status === 'published' || existing?.status === 'published'
+  const deploy = !input.deploy
+    ? { triggered: false, reason: 'deploy:false requested by caller' }
+    : !affectsLiveSite
+      ? { triggered: false, reason: 'draft-only change, nothing to rebuild' }
+      : await triggerDeploy()
 
   return Response.json({
     changed: true,
