@@ -5,8 +5,7 @@ import { LOCALES, type Locale } from '@config'
 import { getAllTags, getPostsByTag, isLocale, localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
-import { SiteFooter } from '@/components/layout/SiteFooter'
-import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SiteFrame } from '@/components/layout/SiteFrame'
 import { PostCard } from '@/components/post/PostCard'
 
 export const dynamic = 'force-static'
@@ -55,22 +54,21 @@ export default async function TagArchivePage({ params }: { params: Promise<{ loc
   const copy = t(locale)
 
   return (
-    <>
-      <SiteHeader locale={locale} localeHrefs={await tagPathsFor(decoded)} />
+    <SiteFrame locale={locale} localeHrefs={await tagPathsFor(decoded)} section="tags">
+      <main className="page">
+        <p className="u-micro text-[var(--accent)]">{copy.tags}</p>
+        <h1 className="page__title mt-4">{decoded}</h1>
 
-      <main className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="text-2xl font-semibold tracking-tight">{copy.postsUnderTag(decoded)}</h1>
-
-        <div className="mt-6">
-          {posts.length === 0 ? (
-            <p className="text-[var(--muted)]">{copy.emptyTag}</p>
-          ) : (
-            posts.map(post => <PostCard key={post.slug} post={post} locale={locale} />)
-          )}
-        </div>
+        {posts.length === 0 ? (
+          <p className="page__empty">{copy.emptyTag}</p>
+        ) : (
+          <ul className="page__list">
+            {posts.map(post => (
+              <PostCard key={post.slug} post={post} locale={locale} />
+            ))}
+          </ul>
+        )}
       </main>
-
-      <SiteFooter locale={locale} />
-    </>
+    </SiteFrame>
   )
 }

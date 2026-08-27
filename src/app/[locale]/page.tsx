@@ -3,11 +3,11 @@ import { notFound } from 'next/navigation'
 import { site } from '@config'
 
 import { getAllPosts, isLocale, localePath } from '@/lib/content'
+import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
-import { SiteFooter } from '@/components/layout/SiteFooter'
-import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SiteFrame } from '@/components/layout/SiteFrame'
 import { Pager } from '@/components/post/Pager'
-import { PostCard } from '@/components/post/PostCard'
+import { PostStage } from '@/components/post/PostStage'
 
 export const dynamic = 'force-static'
 
@@ -26,26 +26,23 @@ export default async function BlogIndexPage({ params }: { params: Promise<{ loca
 
   const posts = await getAllPosts(locale)
   const totalPages = Math.max(1, Math.ceil(posts.length / site.pageSize))
-  const copy = site.locales[locale]
+  const copy = t(locale)
 
   return (
-    <>
-      <SiteHeader locale={locale} localeHrefs={HOME_PATHS} />
-
-      <main className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="text-3xl font-semibold tracking-tight">{copy.title}</h1>
-        <p className="mt-3 max-w-2xl leading-relaxed text-[var(--muted)]">{copy.tagline}</p>
-
-        <div className="mt-8">
-          {posts.slice(0, site.pageSize).map(post => (
-            <PostCard key={post.slug} post={post} locale={locale} />
-          ))}
-        </div>
-
+    <SiteFrame
+      locale={locale}
+      localeHrefs={HOME_PATHS}
+      section="journal"
+      /*
+       * 视觉稿在这个位置没有大标题 —— 当前栏目是靠导航里那一项变洋红来指示的。
+       * h1 因此做成商标下方那行小型大写：语义上仍是页面标题，视觉上是一枚栏目标签。
+       */
+      eyebrow={<h1 className="u-micro head__eyebrow">{copy.journal}</h1>}
+    >
+      <main>
+        <PostStage posts={posts.slice(0, site.pageSize)} locale={locale} />
         <Pager locale={locale} current={1} total={totalPages} />
       </main>
-
-      <SiteFooter locale={locale} />
-    </>
+    </SiteFrame>
   )
 }

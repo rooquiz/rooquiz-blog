@@ -5,10 +5,9 @@ import { LOCALES, site } from '@config'
 import { getAllPosts, isLocale, localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
-import { SiteFooter } from '@/components/layout/SiteFooter'
-import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SiteFrame } from '@/components/layout/SiteFrame'
 import { Pager } from '@/components/post/Pager'
-import { PostCard } from '@/components/post/PostCard'
+import { PostStage } from '@/components/post/PostStage'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -50,25 +49,22 @@ export default async function PagedIndexPage({ params }: { params: Promise<{ loc
   const totalPages = Math.max(1, Math.ceil(posts.length / site.pageSize))
   if (current > totalPages) notFound()
 
-  const slice = posts.slice((current - 1) * site.pageSize, current * site.pageSize)
+  const offset = (current - 1) * site.pageSize
+  const slice = posts.slice(offset, current * site.pageSize)
+  const copy = t(locale)
 
   return (
-    <>
-      <SiteHeader locale={locale} localeHrefs={{ en: localePath('en'), zh: localePath('zh') }} />
-
-      <main className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="text-2xl font-semibold tracking-tight">{t(locale).pageN(current)}</h1>
-
-        <div className="mt-6">
-          {slice.map(post => (
-            <PostCard key={post.slug} post={post} locale={locale} />
-          ))}
-        </div>
-
+    <SiteFrame
+      locale={locale}
+      localeHrefs={{ en: localePath('en'), zh: localePath('zh') }}
+      section="journal"
+      eyebrow={<h1 className="u-micro head__eyebrow">{copy.pageN(current)}</h1>}
+    >
+      <main>
+        {/* offset 传下去，无封面时那块排版砖上的序号才是全站连续的 */}
+        <PostStage posts={slice} locale={locale} offset={offset} />
         <Pager locale={locale} current={current} total={totalPages} />
       </main>
-
-      <SiteFooter locale={locale} />
-    </>
+    </SiteFrame>
   )
 }

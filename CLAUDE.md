@@ -6,8 +6,10 @@
 RooQuiz 博客（`blog.rooquiz.com`）。MDX 正文在 Supabase Storage，元数据在 Supabase
 Postgres，构建期固化成纯静态站部署到 Vercel。无后台，发布走 `/api/posts`。
 
-架构与不显然的技术决定见 `README.md`；发布接口契约见 `docs/publishing-api.md`；
-AI / n8n 接入指南见 `docs/automating-publishing.md`（改接口或校验规则时要同步更新它）。
+版式完全参照 `docs/5bb4eb118bb50.mp4`，几何量与推导见 `README.md`「视觉设计」一节
+和 `src/styles/stage.css` 的注释。架构与不显然的技术决定见 `README.md`；
+发布接口契约见 `docs/publishing-api.md`；AI / n8n 接入指南见
+`docs/automating-publishing.md`（改接口或校验规则时要同步更新它）。
 
 ## 命令
 
@@ -29,6 +31,18 @@ pnpm lint
 - **内容页一律 `export const dynamic = 'force-static'`**，凡是列举得完的路由都要
   写 `generateStaticParams` + `dynamicParams = false`。新增页面后跑一次
   `pnpm build`，确认它在产物清单里是 `●`/`○` 而不是 `ƒ`。
+- **滚动驱动动画只能写 longhand，且必须显式 `animation-duration: auto`**。用
+  `animation: x linear both` 简写在 `pnpm dev` 下正常，但生产构建里 Lightning CSS
+  会把它展开成 `animation-duration: 0s`，进度永远停在 0%，中央预览卡整个消失。
+  改 `src/styles/stage.css` 里那几条动画后，**必须跑 `pnpm build` 并起
+  `next start` 复核**，dev 看不出这个 bug。
+- **版式几何全部走 `tokens.css` 的变量**（`--rail-w` / `--band-t` / `--band-h` /
+  `--card-*` / `--col-*` / `--entry-h`），别在组件里写死百分比 —— 它们是从原稿
+  逐帧量出来的一套互相咬合的比例，单独改一个就会错位。
+  另外 `stage.css` 里 30.2% / 69.8% 那组关键帧百分比是从 `--entry-h` 推出来的，
+  改了 `--entry-h` 要按注释里的公式重算。
+- **`.entry__card` 在窄屏也必须保持 `position: relative`**：封面用的是 next/image
+  的 `fill`，卡片一旦不是定位元素，图片会跳到 `.entry` 上铺满整条。
 - **站内路径统一用 `localePath()`**（`src/lib/content/index.ts`），别手拼字符串
   —— 丢了 locale 前缀就是 404。
 - **Storage key 前缀只有一个来源**：`src/lib/content/paths.ts` 的

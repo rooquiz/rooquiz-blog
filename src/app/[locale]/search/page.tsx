@@ -4,8 +4,7 @@ import { notFound } from 'next/navigation'
 import { isLocale, localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
-import { SiteFooter } from '@/components/layout/SiteFooter'
-import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SiteFrame } from '@/components/layout/SiteFrame'
 import { SearchClient } from '@/components/post/SearchClient'
 
 export const dynamic = 'force-static'
@@ -24,15 +23,11 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
   if (!isLocale(locale)) notFound()
 
   return (
-    <>
-      <SiteHeader locale={locale} localeHrefs={SEARCH_PATHS} />
-
-      <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="mb-8 text-2xl font-semibold tracking-tight">{t(locale).search}</h1>
+    <SiteFrame locale={locale} localeHrefs={SEARCH_PATHS} section="search">
+      <main className="page">
+        <h1 className="page__title">{t(locale).search}</h1>
         <SearchClient locale={locale} />
       </main>
-
-      <SiteFooter locale={locale} />
-    </>
+    </SiteFrame>
   )
 }

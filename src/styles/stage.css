@@ -1,0 +1,953 @@
+/*
+ * 「舞台」—— 文章列表的满幅版式，视觉稿 docs/5bb4eb118bb50.mp4 的核心。
+ *
+ * 逐帧量出来的结构（原稿 918×656）：
+ *   - 一条贯通全页的竖发丝线在 x=178（19.4%）
+ *   - 每条目高 430px（65.5vh），上下边界各一条满幅横发丝线；
+ *     左侧影像带把条目那一格填满，于是滚动时像一条连续的胶片
+ *   - 中央预览卡固定在视口垂直中心（220..447，四帧完全不动），
+ *     跨过竖线，随滚动切换到当前条目的图
+ *   - 文字栏起于 46.5%，宽 26%，随滚动淡入淡出并有位移
+ *
+ * 实现全部用 CSS 滚动驱动动画（view-timeline），没有一行 JS：
+ *   条目自己声明 view-timeline-name，卡片/文字作为它的后代用 animation-timeline
+ *   取到这条时间线。卡片不是 position:fixed —— 它绝对定位在条目中心，再用一条
+ *   线性 translate 抵消条目自身的移动，效果等价于钉在视口中心，但不依赖
+ *   「fixed 后代能否取到祖先时间线」这个更冷的行为。
+ *
+ * 不支持滚动驱动动画的浏览器（@supports 兜底）：卡片就静静躺在各自条目的中心，
+ * 没有钉住也没有淡入淡出 —— 版式还在，只是不动。列表照样可读可爬。
+ */
+
+/* ---------------------------------------------------------------------------
+ * 页面外壳与固定装饰
+ * ------------------------------------------------------------------------- */
+
+/*
+ * 只有列表页开吸附。用 proximity 而不是 mandatory：mandatory 会把用户困在条目
+ * 之间（放大后条目高过视口就彻底动不了，也读不到页脚），proximity 在正常滚动时
+ * 一样会归位，但永远不夺走控制权。
+ */
+html:has(.stage) {
+  scroll-snap-type: y proximity;
+}
+
+/* 步进按钮是纯锚点，平滑滚动由这条给出 */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/** 贯通全页的竖发丝线。单独一个固定元素，免得每个条目都画一段、接缝对不齐 */
+.frame__rule {
+  position: fixed;
+  inset-block: 0;
+  left: var(--rail-w);
+  width: 1px;
+  background: var(--rule);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/*
+ * 影像带遮罩。原稿逐帧量下来，左侧那条影像的可见区间永远是 [114, 544]（17.4vh
+ * 起、65.5vh 高），不随滚动移动 —— 也就是说胶片在一个「固定的窗口」里滑动，
+ * 窗口上下是纸白。这一点很重要：正因为窗口上方永远是白的，左上角的文字商标才
+ * 一直可读。
+ *
+ * 实现上胶片本身留在文档流里（它的滚动速度天然就对），只在最上面盖一层固定的
+ * 纸色遮罩把窗口外的部分挡掉。比给每个条目做视口裁剪简单得多，也不需要 JS。
+ */
+.frame__mask {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--rail-w);
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--paper) 0,
+    var(--paper) var(--band-t),
+    transparent var(--band-t),
+    transparent calc(var(--band-t) + var(--band-h)),
+    var(--paper) calc(var(--band-t) + var(--band-h)),
+    var(--paper) 100%
+  );
+}
+
+/*
+ * 顶部薄纱。滚动时上一条的正文会从导航底下穿过去 —— 原稿也有这个重叠
+ * （f005 里正文在 y=6/33、导航在 y=45），只是行位置刚好错开了没撞上。
+ * 这里不赌运气：竖线右侧压一层从纸色渐隐到透明的固定薄纱，
+ * 导航永远可读，而正文只是「淡出到页顶」，不像加了实色条那样把版式切断。
+ * 高度 14vh，止于影像窗口上沿（--band-t = 17.4vh）之前，不吃到窗口里。
+ */
+.frame__veil {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: var(--rail-w) 0;
+  height: 14vh;
+  z-index: 20;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--paper) 0%, var(--paper) 42%, transparent 100%);
+}
+
+/* ---------------------------------------------------------------------------
+ * 站点头：固定浮层，logo 在左影像带内，导航贴右
+ * ------------------------------------------------------------------------- */
+
+.head {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 2.4vh 6.9% 0 4.8%;
+  pointer-events: none;
+}
+
+.head > * {
+  pointer-events: auto;
+}
+
+.head__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1vh;
+}
+
+/** 商标下方那行小型大写，就是列表页的 h1 */
+.head__eyebrow {
+  color: var(--muted);
+}
+
+/** 文字商标。两行、极紧的行距，读起来像一个印记而不是一句话 */
+.head__mark {
+  font-family: var(--stack-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 125;
+  font-size: clamp(0.9375rem, 1.15vw, 1.1875rem);
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.head__mark span {
+  display: block;
+  color: var(--accent);
+}
+
+.head__nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.25rem, 2.6vw, 2.6rem);
+  padding-block-start: 0.5vh;
+}
+
+.head__link {
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+
+.head__link:hover {
+  color: var(--accent);
+}
+
+/** 当前栏目用洋红，和原稿里高亮的 NEWS 一致 */
+.head__link[aria-current] {
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * 舞台与条目
+ * ------------------------------------------------------------------------- */
+
+.stage {
+  /*
+   * 条目高度。原稿是 65.5vh；矮屏上会挤到放不下日期加三行摘要，所以给一个
+   * rem 下限。注意 --pin 与下面的交接百分比都是从这个值推出来的。
+   */
+  --entry-h: max(65.5vh, 25rem);
+  /*
+   * 钉住卡片所需的位移幅度。条目从「刚进视口」到「完全离开视口」共走
+   * (100vh + entry-h)，其中心相对视口中心的偏移正好从 -(100vh+H)/2 线性
+   * 走到 +(100vh+H)/2。反向补这个量，卡片就停在视口中心。
+   */
+  --pin: calc((100vh + var(--entry-h)) / 2);
+  /* 文字栏相对影像带的滞后幅度，推导见下面 text-pass 的注释 */
+  --text-drift: 10rem;
+
+  list-style: none;
+  margin: 0;
+  /*
+   * 上下各留 (100vh - entry-h)/2，于是 scrollY=0 时第一条正好居中 ——
+   * 原稿的静止态（f001）就是这样：条目居中，头部压在上方的纸白里。
+   * 末条同理，否则最后一条永远滚不到中间。
+   */
+  padding: calc((100vh - var(--entry-h)) / 2) 0;
+}
+
+.entry {
+  position: relative;
+  height: var(--entry-h);
+  border-block-start: 1px solid var(--rule);
+  /* 锚点跳转（上/下步进按钮）落位时把条目居中，而不是顶到视口顶部 */
+  scroll-margin-block-start: calc((100vh - var(--entry-h)) / 2);
+  scroll-snap-align: center;
+  view-timeline-name: --entry;
+  view-timeline-axis: block;
+}
+
+/** 左影像带：把条目这一格填满，于是相邻条目首尾相接，滚动起来是一条胶片 */
+.entry__rail {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: var(--rail-w);
+  margin: 0;
+  overflow: hidden;
+  background: var(--tile);
+}
+
+.entry__rail img,
+.entry__rail .entry__tile {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+ * 只有照片参与视差：略微放大，给下面那点位移留出余量，免得移出来露白。
+ * 排版砖（无封面兜底）刻意不放大也不漂移 —— 它是文字，裁掉边缘就成了残字。
+ */
+.entry__rail img {
+  scale: 1.14;
+}
+
+/** 中央预览卡：跨过竖线，压在影像带之上 */
+.entry__card {
+  position: absolute;
+  inset-inline-start: var(--card-l);
+  width: var(--card-w);
+  aspect-ratio: var(--card-ratio);
+  inset-block-start: 50%;
+  /* 用 margin 做垂直居中，把 translate 留给钉住动画 */
+  margin-block-start: calc(-0.5 * var(--card-w) / var(--card-ratio));
+  z-index: 3;
+  overflow: hidden;
+  background: var(--tile);
+  display: block;
+}
+
+.entry__card img,
+.entry__card .entry__tile {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: scale 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.entry__card:hover img {
+  scale: 1.04;
+}
+
+/*
+ * 无封面时的兜底。原稿的图就是设计本身，缺图不能留白 ——
+ * 换成一块排版砖：巨大的序号 + 首个标签。
+ */
+.entry__tile {
+  display: grid;
+  place-content: center;
+  gap: 0.6em;
+  padding: 8%;
+  background: var(--tile);
+  text-align: center;
+}
+
+.entry__tile-num {
+  font-family: var(--stack-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 125;
+  font-size: clamp(2.25rem, 22cqw, 7rem);
+  line-height: 0.9;
+  color: var(--accent);
+}
+
+.entry__tile-tag {
+  color: var(--muted);
+}
+
+/** 文字栏 */
+.entry__text {
+  position: absolute;
+  inset-inline-start: var(--col-l);
+  width: var(--col-w);
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  /* 日期按这一栏的宽度定尺寸，见下 */
+  container-type: inline-size;
+}
+
+/*
+ * 日期戳。原稿里它永远是一行 —— 「03 OCT 2018」正好占满那一栏（237/240px）。
+ * 所以字号不能给固定值，得跟着栏宽走：英文日期恒为 11 个字符，Anybody wdth 125
+ * 下约 0.81em/字符，11 × 0.81 ≈ 8.9em，取 11cqw 就刚好铺满且永不折行。
+ */
+.entry .entry__stamp {
+  display: block;
+  color: var(--ink);
+  /* 注意用 .entry 提特异度：u-stamp 写在 globals.css 里，@import 之后，同特异度会赢 */
+  font-size: min(11cqw, 3.4rem);
+  white-space: nowrap;
+}
+
+.entry__title {
+  margin-block-start: 1.5rem;
+}
+
+.entry__title a {
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+
+.entry__title a:hover {
+  color: var(--accent);
+}
+
+.entry__summary {
+  margin-block-start: 0.9rem;
+  color: var(--ink);
+  /* 摘要可能很长，原稿那一栏只放得下四五行 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.entry__meta {
+  margin-block-start: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: var(--muted);
+}
+
+.entry__cue {
+  margin-block-start: 1.5rem;
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------------------------
+ * 右侧圆形步进控件。原稿在 x≈89.9%，两颗直径 44px，
+ * 当前可用的那颗是洋红描边 + 洋红三角。
+ * ------------------------------------------------------------------------- */
+
+.entry__step {
+  position: absolute;
+  inset-inline-end: calc(10.1% - 1.375rem);
+  inset-block-start: 50%;
+  margin-block-start: -3.25rem;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.entry__step a {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  color: var(--muted);
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.entry__step a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/** 到头了：没有上一条 / 下一条时留一个灰壳，位置不塌 */
+.entry__step span {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  color: var(--rule-strong);
+}
+
+.entry__step svg {
+  width: 0.5rem;
+  height: 0.5rem;
+  fill: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+ * 滚动驱动动画
+ *
+ * 交接点推导（entry-h = 65.5vh、视口 100vh）：
+ *   条目在 view 进度 50% 时正好居中；下一条居中要再走 entry-h，
+ *   占整段行程 (65.5 / 165.5) = 39.6%，所以交接发生在 50% ± 19.8%
+ *   → 可见窗口 [30.2%, 69.8%]。两端各留 1.5% 做交叉淡变，
+ *   于是任一时刻恰好有一张卡是实的，和原稿一致（原稿四帧里卡片始终清晰）。
+ * ------------------------------------------------------------------------- */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 60rem) {
+    /*
+     * 这里必须写成 longhand 并显式给 animation-duration: auto，不能用
+     * `animation: entry-pin linear both` 这种简写。
+     *
+     * 原因：animation-duration 的初始值是 auto（css-animations-2 专门为滚动驱动
+     * 动画从 0s 改成了 auto），简写里省略时长拿到的是 auto，浏览器直接跑通；
+     * 但 Tailwind v4 的 Lightning CSS 在生产构建里会把简写展开成 longhand，
+     * 并把时长写成 0s —— 于是动画活动时长为 0，进度永远停在 0%，
+     * 所有卡片 visibility: hidden，整个中央预览卡在生产环境里消失。
+     *
+     * dev 不压缩 CSS，所以这个 bug 只在 `next build` 的产物里出现。
+     */
+    .entry__card,
+    .entry__step {
+      /* 卡片与步进控件：线性反向位移 = 钉在视口中心；两端交叉淡变换图 */
+      animation-name: entry-pin, entry-handoff;
+      animation-duration: auto, auto;
+      animation-timing-function: linear, linear;
+      animation-fill-mode: both, both;
+      animation-timeline: --entry;
+    }
+
+    /* 影像带里的照片：轻微反向漂移，跑得比文档慢一点，出多速视差 */
+    .entry__rail img {
+      animation-name: rail-drift;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --entry;
+    }
+
+    /* 文字：比影像带慢，整栏朝视口中心收拢（幅度推导见 text-pass） */
+    .entry__text {
+      animation-name: text-pass;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --entry;
+    }
+  }
+}
+
+@keyframes entry-pin {
+  from {
+    translate: 0 calc(-1 * var(--pin));
+  }
+  to {
+    translate: 0 var(--pin);
+  }
+}
+
+@keyframes entry-handoff {
+  0%,
+  28.7% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  31.7%,
+  68.3% {
+    opacity: 1;
+    visibility: visible;
+  }
+  71.3%,
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes rail-drift {
+  from {
+    translate: 0 -6%;
+  }
+  to {
+    translate: 0 6%;
+  }
+}
+
+/*
+ * 文字：比影像带跑得慢，于是文字栏整体朝视口中心「收拢」。
+ *
+ * 幅度是从原稿 f001 反推的：那一帧里当前条目居中（日期在 y=329），
+ * 下一条的格子中心在 y=759，但它的日期出现在 y=644 —— 比格子中心高了 115px，
+ * 也就是相对视口中心被拉近了约 27%。按整段行程 (100vh + entry-h) 折算，
+ * 单侧幅度约 10rem。正因为如此，原稿在静止态就能同时看到下一条的日期。
+ *
+ * 不做透明度渐变：原稿里下一条的日期是实黑的（它当时的行程进度只有约 10%）。
+ * 有了这个滞后，文字进入视口时已经不会被上下边缘切一半，也就不需要淡变来遮。
+ */
+@keyframes text-pass {
+  from {
+    translate: 0 calc(-50% - var(--text-drift));
+  }
+  to {
+    translate: 0 calc(-50% + var(--text-drift));
+  }
+}
+
+/* 不支持滚动驱动动画时：卡片安静地待在各自条目中心，步进控件收起 */
+@supports not (animation-timeline: view()) {
+  .entry__step {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 窄屏：满幅左右分栏在这里没有意义，改成常规的纵向卡片流。
+ * 保留发丝线、方形宽体日期、小型大写标签 —— 版式语言不变，只是不再分栏。
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 59.99rem) {
+  /* 满幅左右分栏在窄屏没有意义：竖线、影像带窗口遮罩、胶片、步进控件一起收起 */
+  .frame__rule,
+  .frame__mask,
+  .frame__veil {
+    display: none;
+  }
+
+  /*
+   * 头部改成常规流并带纸色底。窄屏上它必须让位：固定浮层压在满幅配图上，
+   * 无底色的小型大写字会直接读不出来。
+   */
+  .head {
+    position: static;
+    flex-wrap: wrap;
+    gap: 1rem 1.25rem;
+    align-items: baseline;
+    padding: 1.25rem 1.5rem;
+    background: var(--paper);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .head__brand {
+    gap: 0.4rem;
+  }
+
+  .head__nav {
+    gap: 1.25rem;
+    padding-block-start: 0;
+  }
+
+  .stage {
+    --entry-h: auto;
+    padding: 0;
+  }
+
+  .entry {
+    height: auto;
+    padding: 2.5rem 1.5rem;
+    scroll-snap-align: none;
+  }
+
+  .entry__rail,
+  .entry__step {
+    display: none;
+  }
+
+  /*
+   * 卡片回到常规流，但必须保留 position: relative —— 里面的封面用的是
+   * next/image 的 fill，一旦卡片不是定位元素，图片会跳到最近的定位祖先
+   * （.entry）上去铺满整条，把版式撑爆。
+   */
+  .entry__card {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    inset: auto;
+  }
+
+  .entry__card img {
+    scale: 1;
+  }
+
+  .entry .entry__stamp {
+    /* 窄屏不再有 --col-w 那个容器，按视口给字号 */
+    font-size: clamp(1.75rem, 9vw, 2.5rem);
+  }
+
+  .entry__text {
+    position: static;
+    width: auto;
+    translate: none;
+    margin-block-start: 1.5rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 文章页。沿用列表页的骨架：同一条竖线、同一个固定影像窗口，
+ * 于是从列表点进来左边那条影像是连着的。
+ *
+ * 与列表页的一处刻意不同：正文栏比原稿的 26% 宽得多。原稿那一栏只放三五行
+ * 快讯，26% 够；一篇文章按那个宽度是一行 30 字符，读不下去。
+ * 这里保留起始位置（--col-l）不变，只把宽度放到 60 字符左右。
+ * ------------------------------------------------------------------------- */
+
+.article__rail {
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block-start: var(--band-t);
+  width: var(--rail-w);
+  height: var(--band-h);
+  overflow: hidden;
+  /* 竖线(2) 之下、遮罩之上都无所谓 —— 它自己就画在窗口里，不需要遮罩 */
+  z-index: 1;
+}
+
+/*
+ * 三栏网格：22% 空栏（留给固定影像带与竖线右侧的呼吸）+ 24.5% 侧栏 + 正文。
+ * 22 + 24.5 = 46.5%，正好落在原稿的文字栏起始线 --col-l 上。
+ */
+.article {
+  display: grid;
+  grid-template-columns: 22% 24.5% 1fr;
+  padding-block: calc(var(--band-t) + 2rem) 6rem;
+  /* 注意别在这里加 padding-inline-end：栏宽是百分比，会以内容盒计算，
+     46.5% 那条线就对不上原稿了。右侧留白靠正文栏自身的 max-width 给。 */
+}
+
+.article__body {
+  grid-column: 3;
+  grid-row: 1;
+  width: min(60ch, 100%);
+}
+
+/** 竖线与正文栏之间那段留白：元信息 + 标签 + 目录，跟着滚动吸顶 */
+.article__aside {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  inset-block-start: calc(var(--band-t) + 2rem);
+  align-self: start;
+  padding-inline-end: 3rem;
+}
+
+.article__stamp {
+  color: var(--accent);
+}
+
+/*
+ * 文章标题。列表页最大的字是日期，文章页最大的字必须是标题 —— 这一屏的主体是
+ * 这篇文章而不是它的日期。字宽收到 100，否则长标题在这个字号下换行太多。
+ */
+.article__title {
+  margin-block-start: 1.2rem;
+  font-family: var(--stack-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 100;
+  font-size: clamp(1.75rem, 3vw, 2.875rem);
+  line-height: 1.08;
+  letter-spacing: 0.005em;
+}
+
+.article__lede {
+  margin-block-start: 1.6rem;
+  color: var(--muted);
+  font-size: clamp(1.0625rem, 1.35vw, 1.25rem);
+  line-height: 1.65;
+}
+
+.article__prose {
+  margin-block-start: 3.5rem;
+  border-block-start: 1px solid var(--rule);
+  padding-block-start: 3.5rem;
+}
+
+.article__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  color: var(--muted);
+}
+
+.article__tags {
+  margin-block-start: 1.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.article__tag {
+  display: inline-block;
+  border: 1px solid var(--rule);
+  padding: 0.5rem 0.7rem;
+  color: var(--muted);
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.article__tag:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.article__toc {
+  margin-block-start: 2.5rem;
+}
+
+/** 底部三栏：上一篇 / 回列表 / 下一篇 */
+.article__nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 2rem;
+  border-block-start: 1px solid var(--rule);
+  padding: 3rem 6.9% 5rem 4.8%;
+}
+
+.article__neighbour {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-width: 22rem;
+}
+
+.article__neighbour--next {
+  justify-self: end;
+  text-align: end;
+}
+
+.article__neighbour-title {
+  transition: color 0.18s ease;
+}
+
+.article__neighbour:hover .article__neighbour-title {
+  color: var(--accent);
+}
+
+.article__back {
+  align-self: center;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 59.99rem) {
+  .article__rail {
+    display: none;
+  }
+
+  .article {
+    display: block;
+    /* 窄屏头部回到常规流了，不用再为固定浮层留顶部空档 */
+    padding-block: 2.5rem 4rem;
+    padding-inline: 1.5rem;
+  }
+
+  .article__body {
+    width: auto;
+  }
+
+  .article__aside {
+    position: static;
+    padding-inline-end: 0;
+    margin-block-start: 3rem;
+  }
+
+  .article__nav {
+    grid-template-columns: 1fr;
+    padding-inline: 1.5rem;
+  }
+
+  .article__neighbour--next {
+    justify-self: start;
+    text-align: start;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 非舞台页面（标签 / 标签归档 / 搜索）。
+ * 这些页面不该再用一屏一条的满幅舞台 —— 翻十屏找不到东西。
+ * 但外壳与字体保持一致：同一条竖线、同一个顶部留白高度、同一套字。
+ * 内容从 22% 起，也就是竖线右边一点，沿用原稿的几何。
+ * ------------------------------------------------------------------------- */
+
+.page {
+  padding: calc(var(--band-t) + 1rem) 6.9% 6rem 22%;
+}
+
+/** 页面大标题：这里没有日期可放大，标题本身就用方形宽体撑起来 */
+.page__title {
+  font-family: var(--stack-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 125;
+  font-size: clamp(1.75rem, 3.4vw, 3.25rem);
+  line-height: 0.98;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+}
+
+.page__lede {
+  margin-block-start: 1.4rem;
+  max-width: 44ch;
+  color: var(--muted);
+}
+
+.page__list {
+  list-style: none;
+  margin: 3.5rem 0 0;
+  padding: 0;
+  border-block-start: 1px solid var(--rule);
+}
+
+.page__empty {
+  margin-block-start: 3rem;
+  color: var(--muted);
+}
+
+/* ---- 索引行 ---- */
+
+.row {
+  border-block-end: 1px solid var(--rule);
+}
+
+.row__link {
+  display: grid;
+  grid-template-columns: 8rem 1fr 12rem;
+  gap: 2rem;
+  align-items: baseline;
+  padding-block: 1.6rem;
+  transition: background-color 0.18s ease;
+}
+
+.row__link:hover {
+  /* 整行给一点极淡的底，比只让标题变色更容易命中 */
+  background-color: var(--tile);
+}
+
+.row__stamp {
+  color: var(--muted);
+  white-space: nowrap;
+  padding-block-start: 0.35rem;
+}
+
+.row__link:hover .row__stamp {
+  color: var(--accent);
+}
+
+.row__title {
+  transition: color 0.18s ease;
+}
+
+.row__link:hover .row__title {
+  color: var(--accent);
+}
+
+.row__summary {
+  margin-block-start: 0.6rem;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.row__aside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-end;
+  color: var(--muted);
+  text-align: end;
+  padding-block-start: 0.35rem;
+}
+
+.row__tag {
+  border: 1px solid var(--rule);
+  padding: 0.35rem 0.55rem;
+}
+
+/* ---- 标签云 ---- */
+
+.tagcloud {
+  list-style: none;
+  margin: 3.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tagcloud a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  border: 1px solid var(--rule);
+  padding: 0.85rem 1rem;
+  color: var(--ink);
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.tagcloud a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tagcloud span {
+  color: var(--muted);
+}
+
+/* ---- 搜索框 ---- */
+
+.search__field {
+  margin-block-start: 3rem;
+  width: min(46rem, 100%);
+  border: 0;
+  border-block-end: 1px solid var(--rule-strong);
+  background: transparent;
+  padding: 0.9rem 0;
+  color: var(--ink);
+  font-family: var(--stack-display);
+  font-weight: 800;
+  font-variation-settings: 'wdth' 112;
+  font-size: clamp(1.25rem, 2.2vw, 2rem);
+  letter-spacing: 0.01em;
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.search__field::placeholder {
+  color: var(--rule-strong);
+  text-transform: uppercase;
+}
+
+.search__field:focus {
+  border-block-end-color: var(--accent);
+}
+
+@media (max-width: 59.99rem) {
+  .page {
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  .row__link {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .row__aside {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: flex-start;
+    text-align: start;
+    padding-block-start: 0;
+  }
+}

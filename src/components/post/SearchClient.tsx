@@ -5,6 +5,7 @@ import Link from 'next/link'
 import MiniSearch from 'minisearch'
 import type { Locale } from '@config'
 
+import { formatStamp } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 interface SearchDoc {
@@ -72,26 +73,32 @@ export function SearchClient({ locale }: { locale: Locale }) {
         placeholder={copy.searchPlaceholder}
         aria-label={copy.search}
         autoFocus
-        className="w-full rounded-[var(--radius)] border border-[var(--border)] bg-transparent px-4 py-3 outline-none focus:border-[var(--accent)]"
+        className="search__field"
       />
 
       {query.trim().length > 0 && (
-        <div className="mt-8">
+        <>
           {results.length === 0 ? (
-            <p className="text-[var(--muted)]">{copy.noResults}</p>
+            <p className="page__empty">{copy.noResults}</p>
           ) : (
-            <ul className="space-y-6">
+            <ul className="page__list">
               {results.map(result => (
-                <li key={result.id}>
-                  <Link href={`/${locale}/${result.id}`} className="font-medium hover:text-[var(--accent)]">
-                    {result.title as string}
+                <li key={result.id} className="row">
+                  <Link href={`/${locale}/${result.id}`} className="row__link">
+                    <time className="u-micro row__stamp" dateTime={result.publishedAt as string}>
+                      {formatStamp(result.publishedAt as string, locale)}
+                    </time>
+                    <div className="row__main">
+                      <h2 className="u-title row__title">{result.title as string}</h2>
+                      <p className="row__summary">{result.summary as string}</p>
+                    </div>
+                    <span />
                   </Link>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{result.summary as string}</p>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </>
       )}
     </div>
   )

@@ -85,3 +85,20 @@ export function localePath(locale: Locale, ...segments: string[]): string {
 
 export { DEFAULT_LOCALE, LOCALES }
 export type { Locale, PostMeta }
+
+/**
+ * 同一语言下的相邻文章（按发布时间倒序的前后邻居），供文章页底部的上一篇 / 下一篇。
+ * 列表已经排过序，这里只取下标 —— 不重新排，免得两处排序规则漂移。
+ */
+export const getNeighbours = cache(
+  async (locale: Locale, slug: string): Promise<{ previous: PostMeta | null; next: PostMeta | null }> => {
+    const posts = await getAllPosts(locale)
+    const index = posts.findIndex(post => post.slug === slug)
+    if (index < 0) return { previous: null, next: null }
+    return {
+      // 倒序列表里「下标更小」是更新的一篇
+      next: posts[index - 1] ?? null,
+      previous: posts[index + 1] ?? null,
+    }
+  },
+)

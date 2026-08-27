@@ -1,56 +1,76 @@
 /*
- * 品牌 token —— 从 rooquiz-web/apps/dubai/src/styles/_site-tokens.css 换算而来。
- * dubai 用 hex + --site-* 前缀；HeroUI v3 的语义变量是 oklch 且无前缀。
- * 这里先留一份 --brand-* 原始色阶，再把其中承载品牌的几个喂给 HeroUI。
+ * 设计 token。视觉稿见 docs/5bb4eb118bb50.mp4 —— 一个满幅左右分栏的编辑型版式：
+ * 左侧一条窄影像带 + 一根贯通的竖发丝线，中央一张跨线的预览卡，
+ * 右侧偏左处一栏很窄的正文，其余留白。
  *
- * 只覆盖「带品牌色彩」的变量（accent / foreground / muted / border / link / radius）。
- * --background 与 --surface 保留 HeroUI 默认（浅灰底 + 白卡片），
- * 那套明暗关系已经调好，没必要盲改。
+ * 几何量全部用百分比 / vh 写，因为原稿是满幅设计（没有居中容器），
+ * 换算成固定 px 在任何非 918px 宽的屏幕上比例都会塌。
+ * 唯一封顶的是正文栏宽 —— 超宽屏上 26.2% 会变成 90 字符一行，没法读。
  *
  * 变量清单见 node_modules/@heroui/styles/dist/themes/default/variables.css。
  * 本文件不进 @layer，因此优先级高于 HeroUI 写在 @layer base 里的定义。
  */
 
 :root {
-  /* 品牌紫色阶（去饱和、偏蓝底），与 dubai 逐档对应 */
-  --brand-purple-50: oklch(0.9626 0.0204 298.2); /* #f4f0ff */
-  --brand-purple-100: oklch(0.9235 0.0428 296.5); /* #e8e0ff */
-  --brand-purple-300: oklch(0.6902 0.1888 288.3); /* #a07fff */
-  --brand-purple-500: oklch(0.5464 0.2642 285.38); /* #6e3cff 主色 */
-  --brand-purple-700: oklch(0.4203 0.2386 280.96); /* #4515c8 */
-  --brand-purple-900: oklch(0.3247 0.1786 280.1); /* #2a0e7a */
+  /* ---- 色 ---- */
+  --paper: #ffffff;
+  --ink: #0a0a0a;
+  --muted: #6e6e6e;
+  /* 视觉稿里的洋红。取自视频中饱和度最高的像素（#e50389 / #de0088 一带） */
+  --accent: #e4008c;
+  --accent-ink: #ffffff;
+  /* 发丝线。原稿是 1px 浅灰，用半透明黑让它在配图上压过去也成立 */
+  --rule: rgb(10 10 10 / 0.11);
+  --rule-strong: rgb(10 10 10 / 0.22);
+  /* 无封面时的兜底底色 */
+  --tile: #f2f0ec;
 
-  /* 中性 ink 阶 */
-  --brand-ink-50: oklch(0.9776 0.0011 286.4); /* #f7f7f8 */
-  --brand-ink-200: oklch(0.8703 0.0044 286.3); /* #d6d6da */
-  --brand-ink-500: oklch(0.474 0.0128 285.9); /* #5b5b63 */
-  --brand-ink-900: oklch(0.1652 0.0062 285.7); /* #0e0e11 */
+  /* ---- 版式几何（原稿 918×656 换算） ---- */
+  --rail-w: 19.4%; /* 左影像带宽度，竖线就在它右沿 */
+  --band-t: 17.4vh; /* 中央影像带上沿（原稿 y=114） */
+  --band-h: 65.5vh; /* 中央影像带高度（原稿 430） */
+  --card-l: 8.2%; /* 预览卡左边缘 —— 刻意小于 rail-w，卡片要跨过竖线 */
+  --card-w: 30.5%;
+  --card-ratio: 1.233; /* 原稿 280×227 */
+  --col-l: 46.5%; /* 文字栏左边缘 */
+  --col-w: clamp(17rem, 27%, 28rem);
 
-  --brand-border: oklch(0.9233 0.0067 286.27); /* #e5e5ea */
-  --brand-amber: oklch(0.7686 0.1647 70.08); /* #f59e0b 点缀 */
-
-  /* 自有的柔和底色，用于 hero / 引用块等 HeroUI 没有对应语义的地方 */
-  --brand-surface-soft: var(--brand-purple-50);
+  /* ---- 字号 ---- */
+  --step-stamp: clamp(1.75rem, 3.7vw, 3.5rem); /* 日期大标题 */
+  --step-title: clamp(1.0625rem, 1.35vw, 1.375rem);
+  --step-body: clamp(0.9375rem, 1.15vw, 1.0625rem);
+  --step-micro: 0.6875rem; /* 导航 / 标签 / HERE 这类小字 */
+  --lh-body: 1.9; /* 原稿 14px/27px，非常松 */
 
   /* ---- 覆盖 HeroUI v3 语义变量 ---- */
-  --accent: var(--brand-purple-500);
-  --foreground: var(--brand-ink-900);
-  --muted: var(--brand-ink-500);
-  --border: var(--brand-border);
-  --separator: var(--brand-border);
+  --foreground: var(--ink);
+  --background: var(--paper);
+  --border: var(--rule);
+  --separator: var(--rule);
   --link: var(--accent);
-
-  /* dubai 的圆角偏锐利（4/6/10/16），取 10px 作为组件基准 */
-  --radius: 0.625rem;
+  /* 原稿的控件是正圆和直角，没有中间态圆角 */
+  --radius: 0rem;
 }
 
 /*
- * 暗色：HeroUI 按 .dark / [data-theme="dark"] 换值，但它的暗色块里没有重定义 --accent，
- * 纯紫在深底上偏闷，这里手动提亮一档。首版不做切换器，变量先就位。
+ * 暗色。原稿只有浅色一版，这里按同一套关系翻过去：
+ * 纸变墨、发丝线换成半透明白、洋红提亮一档（纯 #e4008c 在深底上发闷）。
+ * 首版没有切换器，变量先就位。
  */
 .dark,
 [data-theme='dark'] {
-  --accent: var(--brand-purple-300);
-  --brand-surface-soft: oklch(0.2299 0.0416 285.9);
+  --paper: #0a0a0a;
+  --ink: #f4f4f4;
+  --muted: #9a9a9a;
+  --accent: #ff3ba7;
+  --accent-ink: #0a0a0a;
+  --rule: rgb(255 255 255 / 0.14);
+  --rule-strong: rgb(255 255 255 / 0.28);
+  --tile: #1a1a1a;
+
+  --foreground: var(--ink);
+  --background: var(--paper);
+  --border: var(--rule);
+  --separator: var(--rule);
   --link: var(--accent);
 }

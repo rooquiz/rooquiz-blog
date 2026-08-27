@@ -81,6 +81,33 @@ Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区
 
 发布链路：写入 API → Deploy Hook → 构建 → CDN。
 
+## 视觉设计
+
+版式完全参照 `docs/5bb4eb118bb50.mp4`（一支 918×656、4 秒的录屏）。几何量是逐帧
+量出来的，写在 `src/styles/tokens.css`，推导写在 `src/styles/stage.css` 的注释里：
+
+| 元素       | 原稿                | token                   |
+| ---------- | ------------------- | ----------------------- |
+| 竖发丝线   | x = 178             | `--rail-w: 19.4%`       |
+| 影像窗口   | y = 114…544         | `--band-t` / `--band-h` |
+| 中央预览卡 | 75…355 × 220…447    | `--card-l` / `--card-w` |
+| 文字栏     | 起 427，宽 240      | `--col-l` / `--col-w`   |
+| 条目高度   | 430（横发丝线间距） | `--entry-h: 65.5vh`     |
+
+三层以不同速度滚动：影像带跟文档走（每格 65.5vh，首尾相接，看起来是一条胶片），
+预览卡钉在视口中心并在条目交接处换图，文字栏比影像带慢、整栏朝中心收拢。
+
+**字体**：展示字体 Anybody（wdth 125 / wght 800）—— 原稿的日期大标题是 Eurostile
+Bold Extended 那一路的方形宽体，Google Fonts 里只有 Anybody 的字形对得上，而且它带
+`wdth` 可变轴，宽度是选出来的而不是横向拉伸出来的。正文 Space Grotesk 300 —— 原稿
+正文那个平顶的「3」和双层「a」就是它。两款都没有中日韩字形，所以中文的日期戳走
+`2026.08.27` 而不是「2026年8月27日」（见 `lib/format.ts` 的 `formatStamp`），
+否则一个大字号里会混进两套字重两套宽度。
+
+**主色取的是原稿的洋红 `#e4008c`**（视频里饱和度最高的像素在 `#e50389`–`#de0088`
+一带），不是 rooquiz 原来的品牌紫。要换回紫色只需改 `tokens.css` 里 `--accent`
+一行 —— 其余全站都引这个变量。
+
 ## 技术选型里几个不显然的决定
 
 - **不用 `output: 'export'`**：静态导出没有 Route Handler，写入 API 就得外挂
@@ -101,6 +128,25 @@ Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区
 - **搜索走构建期 JSON 索引 + 客户端 MiniSearch**，不走 Postgres 全文检索：
   Supabase 的托管 Postgres 没有中文分词扩展，`to_tsvector` 对中文等于整段不切。
   `posts.search_vector` 那列留着，文章上千后可切回服务端。
+- **列表页的视差 / 卡片切换 / 上下步进控件全部是 CSS，没有一行 JS**：条目用
+  `view-timeline-name` 声明自己的滚动时间线，卡片与文字作为它的后代用
+  `animation-timeline` 取到那条时间线。卡片不是 `position: fixed`，而是绝对定位在
+  条目中心、再用一条线性 `translate` 抵消条目自身的位移 —— 等效于钉在视口中心，
+  但不依赖「fixed 后代能否解析祖先时间线」这个更冷的行为。步进按钮是纯 `#anchor`，
+  靠 `scroll-margin` 落位到视口中心。不支持滚动驱动动画的浏览器走
+  `@supports` 兜底：卡片静静躺在各自条目的中心，版式还在，只是不动。
+- **滚动驱动动画必须写 longhand 并显式给 `animation-duration: auto`**，不能用
+  `animation: x linear both` 简写。简写省略时长拿到的是初始值 `auto`（css-animations-2
+  为滚动驱动动画专门从 `0s` 改成了 `auto`），dev 下正常；但生产构建里 Tailwind v4 的
+  Lightning CSS 会把简写展开成 longhand 并把时长写成 `0s`，动画活动时长归零、进度
+  永远停在 0%，于是所有卡片 `visibility: hidden` —— 中央预览卡在生产环境里整个消失，
+  而 `pnpm dev` 完全看不出来。这个坑踩过一次，守卫是 `stage.css` 里那段注释。
+- **`--entry-h` 之外的交接百分比是硬编码的**（30.2% / 69.8% 那一组）：它们由
+  `entry-h / (100vh + entry-h)` 推出来，CSS 里没法从变量算出关键帧百分比。
+  改 `--entry-h` 就要跟着重算，公式写在 `stage.css` 的注释里。
+- **OG 图的两个字体文件提交进仓库**（`src/lib/og-fonts/`）：Satori 不读 CSS，
+  必须拿到字体二进制，而 `next/font` 注入的是 CSS 变量。构建期去网上拉字体只会
+  多一种「CI 里偶发失败」的方式，这两个文件一年也不会动一次。
 
 ## 依赖 pin
 

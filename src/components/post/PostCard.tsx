@@ -2,43 +2,34 @@ import Link from 'next/link'
 import type { Locale } from '@config'
 
 import { localePath, type PostMeta } from '@/lib/content'
-import { formatDate, formatReadingTime } from '@/lib/format'
+import { formatReadingTime, formatStamp } from '@/lib/format'
 
 /**
- * 列表卡片。刻意不用 HeroUI 的 Card —— 它是 'use client'，
- * 列表页一屏十几张卡会把整份 react-aria 拖进首屏，而这里不需要任何交互。
+ * 索引行。标签页 / 搜索结果页用 —— 那些页面不该再来一遍首页那套满幅舞台
+ * （一屏一条，翻十屏找不到东西），但要留在同一套版式语言里：
+ * 发丝线分隔、日期走方形宽体、标题走展示体、其余小型大写。
+ *
+ * 刻意不用 HeroUI 的 Card：它是 'use client'，一屏十几行会把整份 react-aria
+ * 拖进首屏，而这里不需要任何交互。
  */
 export function PostCard({ post, locale }: { post: PostMeta; locale: Locale }) {
   return (
-    <article className="border-b border-[var(--border)] py-8 last:border-b-0">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[var(--muted)]">
-        <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
-        <span aria-hidden>·</span>
-        <span>{formatReadingTime(post.readingMinutes, locale)}</span>
-      </div>
+    <li className="row">
+      <Link href={localePath(locale, post.slug)} className="row__link">
+        <time className="u-micro row__stamp" dateTime={post.publishedAt}>
+          {formatStamp(post.publishedAt, locale)}
+        </time>
 
-      <h2 className="mt-2 text-xl font-semibold tracking-tight">
-        <Link href={localePath(locale, post.slug)} className="hover:text-[var(--accent)]">
-          {post.title}
-        </Link>
-      </h2>
+        <div className="row__main">
+          <h2 className="u-title row__title">{post.title}</h2>
+          {post.summary && <p className="row__summary">{post.summary}</p>}
+        </div>
 
-      {post.summary && <p className="mt-2 leading-relaxed text-[var(--muted)]">{post.summary}</p>}
-
-      {post.tags.length > 0 && (
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {post.tags.map(tag => (
-            <li key={tag}>
-              <Link
-                href={localePath(locale, 'tags', tag)}
-                className="inline-block rounded-full border border-[var(--border)] px-3 py-1 text-xs text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
-              >
-                {tag}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </article>
+        <span className="u-micro row__aside">
+          {post.tags[0] && <span className="row__tag">{post.tags[0]}</span>}
+          <span>{formatReadingTime(post.readingMinutes, locale)}</span>
+        </span>
+      </Link>
+    </li>
   )
 }
