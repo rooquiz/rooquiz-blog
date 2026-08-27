@@ -32,6 +32,7 @@ Vercel Build
 ```bash
 pnpm install
 pnpm sync     # 没配 Supabase 变量时回落到 content/_samples/，离线可用
+              # （只在本地回落；CI / Vercel 里缺凭据会直接让构建失败）
 pnpm dev      # http://localhost:8200
 ```
 
@@ -94,6 +95,9 @@ Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区
   免得每页都拖一份 react-aria 进首屏。
 - **分页自己写而不用 HeroUI 的 Pagination**：后者建立在 react-aria Button 上，
   只接受 `onPress` 不接受 `href`，渲染出来是按钮而非可爬取的 `<a>`。
+- **CI 里缺 Supabase 凭据直接让构建失败**，而不是回落到样例内容。回落对本地是便利，
+  对生产是灾难：构建照样绿灯，产出的却是一个只有样例文章的站，没有任何一处会报错。
+  这个失败模式真实发生过一次，守卫在 `scripts/sync-content.mts` 的 `isAutomatedBuild()`。
 - **搜索走构建期 JSON 索引 + 客户端 MiniSearch**，不走 Postgres 全文检索：
   Supabase 的托管 Postgres 没有中文分词扩展，`to_tsvector` 对中文等于整段不切。
   `posts.search_vector` 那列留着，文章上千后可切回服务端。

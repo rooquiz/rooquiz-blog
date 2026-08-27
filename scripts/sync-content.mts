@@ -239,15 +239,39 @@ async function writeSearchIndexes(index: ContentIndex) {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * 是不是跑在 CI / Vercel 构建里。
+ * Vercel 构建期一定会注入 VERCEL=1；GitHub Actions 等注入 CI=true。
+ * 本地想临时模拟这个模式（验证守卫是否生效），加 STRICT_CONTENT_SOURCE=1。
+ */
+function isAutomatedBuild(): boolean {
+  return Boolean(process.env.VERCEL || process.env.CI || process.env.STRICT_CONTENT_SOURCE)
+}
+
 async function main() {
   await fs.rm(path.join(CONTENT_DIR, 'posts'), { recursive: true, force: true }).catch(() => {})
 
   const hasCredentials = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
 
   if (!hasCredentials) {
+    // 回落到样例内容对本地开发是便利，对生产构建是灾难：
+    // 构建照样绿灯，产出的却是一个只有样例文章的站——部署成功、内容全错，
+    // 而且没有任何一处会报错。这个失败模式已经真实发生过一次，所以在 CI 里直接拒绝构建。
+    if (isAutomatedBuild()) {
+      throw new Error(
+        [
+          'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 缺失，拒绝在自动化构建中回落到样例内容。',
+          '回落只服务本地开发；在这里放行会产出一个「部署成功但内容是样例」的站。',
+          '',
+          '修复：在 Vercel 项目的 Environment Variables 里为当前环境补上这两个变量，',
+          '然后重新部署（记得取消勾选 Use existing Build Cache）。',
+        ].join('\n'),
+      )
+    }
+
     log('!'.repeat(60))
     log('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set —— 回落到 content/_samples/')
-    log('这只适合本地开发。生产构建缺 key 会产出一个只有样例文章的站。')
+    log('仅限本地开发。CI / Vercel 构建里缺 key 会直接失败，不会静默出样例站。')
     log('!'.repeat(60))
   }
 
@@ -259,6 +283,15 @@ async function main() {
 
   const byLocale = LOCALES.map(l => `${l}=${index.posts.filter(p => p.locale === l).length}`).join(' ')
   log(`done · source=${index.source} · ${byLocale} · default locale=${DEFAULT_LOCALE}`)
+
+  // 连上了库但一篇已发布文章都没有：多半是连错了 project，或者 status 还都是 draft。
+  // 不阻断构建（空博客是合法状态），但要在构建日志里显眼地说一声。
+  if (index.source === 'supabase' && index.posts.length === 0) {
+    log('!'.repeat(60))
+    log('WARNING: Supabase 连通，但 posts 表里没有 status=published 的文章。')
+    log('产出的会是一个空博客。检查是不是连错了 project，或文章还都是 draft。')
+    log('!'.repeat(60))
+  }
 }
 
 main().catch(error => {

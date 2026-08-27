@@ -36,5 +36,7 @@ pnpm lint
 - **`src/lib/supabase/admin.ts` 带 `server-only`**，别在组件里 import。
 - **`pnpm-workspace.yaml` 的两个 overrides 不要删**（unified / style-to-js），
   原因写在 README「依赖 pin」一节。
+- **别把 `sync-content.mts` 里的 CI 守卫改回静默回落**。缺凭据时在 CI 中必须让构建
+  失败——静默回落会产出「部署成功但内容是样例」的站，排查起来毫无线索。
 - `src/app/[locale]/kitchen-sink/` 是 HeroUI 主题验证用的临时页，站点定型后删掉，
   同时从 `RESERVED_SLUGS` 和 `robots.ts` 的 disallow 里摘掉。
