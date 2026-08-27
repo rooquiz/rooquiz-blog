@@ -1,0 +1,15 @@
+# 单包仓库，这个文件只用来承载 pnpm 11 的设置项（pnpm 11 起不再读 package.json 的 pnpm 字段）。
+allowBuilds:
+  # tsx 跑 scripts/*.mts 依赖 esbuild 的原生二进制
+  esbuild: true
+  # @vercel/speed-insights 的 postinstall
+  '@vercel/speed-insights': true
+overrides:
+  # next-mdx-remote 经 @mdx-js/mdx 拉 unified@11.0.0，@shikijs/rehype 拉 11.0.5，
+  # 两份 unified 的 Processor 类型不互认，插件数组会整段类型报错。统一到高版本。
+  unified: ^11.0.5
+  # style-to-js@1.x 的 CJS 构建把函数挂在 exports.default 上（而不是 module.exports = fn），
+  # 在 Node ESM interop 下 hast-util-to-estree 拿到的不是函数，于是任何带 style 的元素
+  # 都会以 "Could not parse `style` attribute" 失败 —— Shiki 高亮出来的 <span style> 全中招。
+  # 2.x 改回 module.exports = fn，签名不变。rooquiz-docs 踩过同一个坑。
+  style-to-js: ^2.0.0

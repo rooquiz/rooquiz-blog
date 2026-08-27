@@ -1,0 +1,56 @@
+/*
+ * 品牌 token —— 从 rooquiz-web/apps/dubai/src/styles/_site-tokens.css 换算而来。
+ * dubai 用 hex + --site-* 前缀；HeroUI v3 的语义变量是 oklch 且无前缀。
+ * 这里先留一份 --brand-* 原始色阶，再把其中承载品牌的几个喂给 HeroUI。
+ *
+ * 只覆盖「带品牌色彩」的变量（accent / foreground / muted / border / link / radius）。
+ * --background 与 --surface 保留 HeroUI 默认（浅灰底 + 白卡片），
+ * 那套明暗关系已经调好，没必要盲改。
+ *
+ * 变量清单见 node_modules/@heroui/styles/dist/themes/default/variables.css。
+ * 本文件不进 @layer，因此优先级高于 HeroUI 写在 @layer base 里的定义。
+ */
+
+:root {
+  /* 品牌紫色阶（去饱和、偏蓝底），与 dubai 逐档对应 */
+  --brand-purple-50: oklch(0.9626 0.0204 298.2); /* #f4f0ff */
+  --brand-purple-100: oklch(0.9235 0.0428 296.5); /* #e8e0ff */
+  --brand-purple-300: oklch(0.6902 0.1888 288.3); /* #a07fff */
+  --brand-purple-500: oklch(0.5464 0.2642 285.38); /* #6e3cff 主色 */
+  --brand-purple-700: oklch(0.4203 0.2386 280.96); /* #4515c8 */
+  --brand-purple-900: oklch(0.3247 0.1786 280.1); /* #2a0e7a */
+
+  /* 中性 ink 阶 */
+  --brand-ink-50: oklch(0.9776 0.0011 286.4); /* #f7f7f8 */
+  --brand-ink-200: oklch(0.8703 0.0044 286.3); /* #d6d6da */
+  --brand-ink-500: oklch(0.474 0.0128 285.9); /* #5b5b63 */
+  --brand-ink-900: oklch(0.1652 0.0062 285.7); /* #0e0e11 */
+
+  --brand-border: oklch(0.9233 0.0067 286.27); /* #e5e5ea */
+  --brand-amber: oklch(0.7686 0.1647 70.08); /* #f59e0b 点缀 */
+
+  /* 自有的柔和底色，用于 hero / 引用块等 HeroUI 没有对应语义的地方 */
+  --brand-surface-soft: var(--brand-purple-50);
+
+  /* ---- 覆盖 HeroUI v3 语义变量 ---- */
+  --accent: var(--brand-purple-500);
+  --foreground: var(--brand-ink-900);
+  --muted: var(--brand-ink-500);
+  --border: var(--brand-border);
+  --separator: var(--brand-border);
+  --link: var(--accent);
+
+  /* dubai 的圆角偏锐利（4/6/10/16），取 10px 作为组件基准 */
+  --radius: 0.625rem;
+}
+
+/*
+ * 暗色：HeroUI 按 .dark / [data-theme="dark"] 换值，但它的暗色块里没有重定义 --accent，
+ * 纯紫在深底上偏闷，这里手动提亮一档。首版不做切换器，变量先就位。
+ */
+.dark,
+[data-theme='dark'] {
+  --accent: var(--brand-purple-300);
+  --brand-surface-soft: oklch(0.2299 0.0416 285.9);
+  --link: var(--accent);
+}

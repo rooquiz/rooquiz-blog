@@ -1,0 +1,76 @@
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { LOCALES, type Locale } from '@config'
+
+import { getAllTags, getPostsByTag, isLocale, localePath } from '@/lib/content'
+import { t } from '@/lib/i18n'
+import { buildMetadata } from '@/lib/metadata'
+import { SiteFooter } from '@/components/layout/SiteFooter'
+import { SiteHeader } from '@/components/layout/SiteHeader'
+import { PostCard } from '@/components/post/PostCard'
+
+export const dynamic = 'force-static'
+export const dynamicParams = false
+
+export async function generateStaticParams() {
+  const params: { locale: string; tag: string }[] = []
+  for (const locale of LOCALES) {
+    for (const { tag } of await getAllTags(locale)) params.push({ locale, tag })
+  }
+  return params
+}
+
+/** 标签是跨语言共用的字符串，但某个标签未必在两种语言下都有文章 */
+async function tagPathsFor(tag: string): Promise<Partial<Record<Locale, string>>> {
+  const paths: Partial<Record<Locale, string>> = {}
+  for (const locale of LOCALES) {
+    const posts = await getPostsByTag(locale, tag)
+    if (posts.length > 0) paths[locale] = localePath(locale, 'tags', tag)
+  }
+  return paths
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; tag: string }>
+}): Promise<Metadata> {
+  const { locale, tag } = await params
+  if (!isLocale(locale)) return {}
+
+  const decoded = decodeURIComponent(tag)
+  return buildMetadata({
+    locale,
+    title: t(locale).postsUnderTag(decoded),
+    paths: await tagPathsFor(decoded),
+  })
+}
+
+export default async function TagArchivePage({ params }: { params: Promise<{ locale: string; tag: string }> }) {
+  const { locale, tag } = await params
+  if (!isLocale(locale)) notFound()
+
+  const decoded = decodeURIComponent(tag)
+  const posts = await getPostsByTag(locale, decoded)
+  const copy = t(locale)
+
+  return (
+    <>
+      <SiteHeader locale={locale} localeHrefs={await tagPathsFor(decoded)} />
+
+      <main className="mx-auto max-w-4xl px-6 py-12">
+        <h1 className="text-2xl font-semibold tracking-tight">{copy.postsUnderTag(decoded)}</h1>
+
+        <div className="mt-6">
+          {posts.length === 0 ? (
+            <p className="text-[var(--muted)]">{copy.emptyTag}</p>
+          ) : (
+            posts.map(post => <PostCard key={post.slug} post={post} locale={locale} />)
+          )}
+        </div>
+      </main>
+
+      <SiteFooter locale={locale} />
+    </>
+  )
+}

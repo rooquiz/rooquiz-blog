@@ -1,0 +1,13 @@
+{
+  "slug": "quiz-result-pages-that-convert",
+  "locale": "en",
+  "translationKey": "result-pages",
+  "title": "Result pages that convert: the four blocks",
+  "summary": "A result screen has one job: name the gap, then offer the bridge. Here are the four blocks that do it.",
+  "tags": ["quiz-design", "conversion"],
+  "author": "RooQuiz Team",
+  "status": "published",
+  "publishedAt": "2026-08-27T09:00:00Z",
+  "deploy": false,
+  "mdx": "---\ntitle: Result pages that convert\n---\n\nA result screen has one job.\n\n## Name the gap\n\nTell them what the answers revealed that they could not have guessed.\n\n## Offer the bridge\n\nOne next step, matched to that gap. Not a newsletter.\n"
+}

@@ -1,0 +1,54 @@
+/* 顺序有意义：tailwindcss 必须在 @heroui/styles 之前，token 覆盖必须在两者之后 */
+@import 'tailwindcss';
+@import '@heroui/styles';
+@import './tokens.css';
+
+@plugin '@tailwindcss/typography';
+
+@theme {
+  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body {
+  font-family: var(--font-display);
+}
+
+/*
+ * MDX 正文排版。HeroUI 只管外壳组件，prose 这块归 @tailwindcss/typography，
+ * 这里把它的默认灰调换成品牌 token，免得正文和站点 chrome 是两套配色。
+ */
+.prose {
+  --tw-prose-body: var(--brand-ink-900);
+  --tw-prose-headings: var(--brand-ink-900);
+  --tw-prose-lead: var(--brand-ink-500);
+  --tw-prose-links: var(--accent);
+  --tw-prose-bold: var(--brand-ink-900);
+  --tw-prose-counters: var(--brand-ink-500);
+  --tw-prose-bullets: var(--brand-ink-200);
+  --tw-prose-hr: var(--brand-border);
+  --tw-prose-quotes: var(--brand-ink-900);
+  --tw-prose-quote-borders: var(--brand-purple-300);
+  --tw-prose-captions: var(--brand-ink-500);
+  --tw-prose-th-borders: var(--brand-border);
+  --tw-prose-td-borders: var(--brand-border);
+  max-width: none;
+}
+
+.dark .prose {
+  --tw-prose-body: var(--brand-ink-50);
+  --tw-prose-headings: var(--brand-ink-50);
+  --tw-prose-bold: var(--brand-ink-50);
+  --tw-prose-quotes: var(--brand-ink-50);
+}
+
+/* Shiki 输出带内联样式的 <pre>，prose 的代码块底色要让位 */
+.prose pre {
+  background-color: transparent;
+  padding: 0;
+}
+
+.prose pre > code {
+  display: block;
+  overflow-x: auto;
+  padding: 1rem 1.25rem;
+}

@@ -1,0 +1,59 @@
+{
+  "name": "rooquiz-blog",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RooQuiz 博客 - blog.rooquiz.com（MDX 正文存 Supabase Storage，元数据存 Postgres，构建期固化为静态站）",
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev -p 8200",
+    "sync": "tsx scripts/sync-content.mts",
+    "build": "pnpm sync && next build",
+    "start": "next start -p 8200",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@heroui/react": "^3.2.4",
+    "@heroui/styles": "^3.2.4",
+    "@supabase/supabase-js": "^2.112.4",
+    "@vercel/analytics": "^1.4.1",
+    "@vercel/speed-insights": "^1.1.0",
+    "clsx": "^2.1.1",
+    "gray-matter": "^4.0.3",
+    "minisearch": "^7.2.0",
+    "next": "^15.5.19",
+    "next-mdx-remote": "^6.0.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "reading-time": "^1.5.0",
+    "rehype-autolink-headings": "^7.1.0",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "server-only": "^0.0.1",
+    "shiki": "^4.4.3",
+    "@shikijs/rehype": "^4.4.3",
+    "tailwind-merge": "^3.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^22.10.0",
+    "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.7",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.33.0",
+    "eslint-config-next": "^15.5.19",
+    "prettier": "^3.2.5",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3"
+  }
+}

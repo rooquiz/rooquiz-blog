@@ -1,0 +1,50 @@
+---
+title: How to build a quiz funnel that actually converts
+summary: Most quiz funnels leak leads at the result screen. Here is the three-step structure that keeps people moving from curiosity to conversation.
+translationKey: quiz-funnel
+tags:
+  - lead-generation
+  - quiz-design
+author: RooQuiz Team
+publishedAt: 2026-08-20T09:00:00Z
+---
+
+A quiz funnel is not a quiz with a form bolted onto the end. It is three distinct promises made in sequence, and most funnels break because the second one is missing.
+
+## The three promises
+
+1. **The hook promise** — the title tells someone what they will learn about themselves.
+2. **The result promise** — the outcome screen tells them something they could not have guessed.
+3. **The next-step promise** — the follow-up offers help with the exact gap the result exposed.
+
+> If your result screen could be swapped between two different quizzes without anyone noticing, you do not have a result promise.
+
+## Where funnels leak
+
+| Stage | Typical drop-off | Usual cause |
+| --- | --- | --- |
+| Start → Q1 | 20–30% | Title promises a category, not an insight |
+| Q1 → last question | 15–25% | Too many questions, no progress signal |
+| Result → CTA | 50%+ | Generic result, unrelated offer |
+
+The last row is where almost all the money goes. A result that says *"You're a Balanced Planner!"* and then pitches a generic newsletter has broken the chain.
+
+## A worked structure
+
+```ts
+// 每个结果分支都绑定一个具体的下一步，避免结果页变成死胡同
+const outcomes = {
+  overplanner: { gap: 'shipping', cta: 'the 7-day launch sprint' },
+  underplanner: { gap: 'structure', cta: 'the one-page plan template' },
+}
+```
+
+Pick the gap first, then write the result copy backwards from it. The quiz exists to earn the right to name that gap.
+
+## What to measure
+
+- Completion rate, split by traffic source
+- Result-screen CTA click rate, **split by outcome**
+- Reply rate on the first follow-up email
+
+That second one is the diagnostic. If one outcome converts at 12% and another at 2%, the problem is copy on a single screen, not the funnel.
