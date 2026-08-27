@@ -16,10 +16,14 @@ import path from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import matter from 'gray-matter'
 import readingTime from 'reading-time'
-import 'dotenv/config'
+import dotenv from 'dotenv'
 
 import { DEFAULT_LOCALE, LOCALES, site, type Locale } from '../site.config.ts'
 import type { ContentIndex, PostMeta } from '../src/lib/content/types.ts'
+
+// Next 自己会读 .env.local，但这个脚本是 tsx 直接跑的、不经过 Next，
+// 得手动按同样的优先级加载：.env.local 覆盖 .env。
+dotenv.config({ path: ['.env.local', '.env'], quiet: true })
 
 const CONTENT_DIR = path.join(process.cwd(), '.content')
 const INDEX_FILE = path.join(CONTENT_DIR, 'index.json')
