@@ -1,4 +1,5 @@
 import { isLocale } from '@/lib/content'
+import { hasSupabaseCredentials } from '@/lib/env'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +9,9 @@ export const dynamic = 'force-dynamic'
  *
  * 走服务端 Route Handler 而不是让浏览器直连 Supabase：
  * 这样客户端不需要 anon key，RPC 也不用对 anon 开放。
+ *
+ * 没配 Supabase 时返回 count: null 而不是 500 —— 离线开发模式下每打开一篇文章
+ * 报一次 500 纯属噪音，客户端拿到非数字本来就会什么都不渲染。
  */
 async function resolvePostId(locale: string, slug: string): Promise<string | null> {
   const { data } = await supabaseAdmin()
@@ -24,6 +28,7 @@ async function resolvePostId(locale: string, slug: string): Promise<string | nul
 export async function GET(_request: Request, { params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params
   if (!isLocale(locale)) return Response.json({ error: 'Unknown locale' }, { status: 404 })
+  if (!hasSupabaseCredentials()) return Response.json({ count: null })
 
   const postId = await resolvePostId(locale, slug)
   if (!postId) return Response.json({ error: 'Not found' }, { status: 404 })
@@ -40,6 +45,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
 export async function POST(_request: Request, { params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params
   if (!isLocale(locale)) return Response.json({ error: 'Unknown locale' }, { status: 404 })
+  if (!hasSupabaseCredentials()) return Response.json({ count: null })
 
   const postId = await resolvePostId(locale, slug)
   if (!postId) return Response.json({ error: 'Not found' }, { status: 404 })
