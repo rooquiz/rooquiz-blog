@@ -6,7 +6,8 @@
 RooQuiz 博客（`blog.rooquiz.com`）。MDX 正文在 Supabase Storage，元数据在 Supabase
 Postgres，构建期固化成纯静态站部署到 Vercel。无后台，发布走 `/api/posts`。
 
-架构与不显然的技术决定见 `README.md`；发布接口契约见 `docs/publishing-api.md`。
+架构与不显然的技术决定见 `README.md`；发布接口契约见 `docs/publishing-api.md`；
+AI / n8n 接入指南见 `docs/automating-publishing.md`（改接口或校验规则时要同步更新它）。
 
 ## 命令
 

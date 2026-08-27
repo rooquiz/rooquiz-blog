@@ -4,7 +4,8 @@ RooQuiz 博客 —— `blog.rooquiz.com`。
 
 MDX 正文存 Supabase Storage，元数据存 Supabase Postgres，Vercel 在构建期把两者
 固化成纯静态站。没有后台界面：文章一律通过受 token 保护的 HTTP 接口写入
-（见 [`docs/publishing-api.md`](docs/publishing-api.md)）。
+（接口契约见 [`docs/publishing-api.md`](docs/publishing-api.md)，
+AI / n8n 接入见 [`docs/automating-publishing.md`](docs/automating-publishing.md)）。
 
 ## 架构
 

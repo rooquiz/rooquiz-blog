@@ -5,6 +5,9 @@
 
 生产地址 `https://blog.rooquiz.com`，本地 `http://localhost:8200`。
 
+> 这份是接口契约。想知道 AI Agent 或 n8n 该怎么驱动它——工具定义、节点编排、
+> 内容生成约定、重试语义——看 [`automating-publishing.md`](./automating-publishing.md)。
+
 ---
 
 ## `POST /api/posts` — 写入一篇文章
