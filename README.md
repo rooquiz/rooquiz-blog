@@ -73,7 +73,8 @@ pnpm dev      # http://localhost:8200
 
 ## 部署
 
-Vercel，region `sfo1`。`blog.rooquiz.com` 的 CNAME 在 Cloudflare DNS 里必须
+Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区——
+构建期的 `pnpm sync` 与运行时的 `/api/views` 都要连库，跨区会明显拖慢构建）。`blog.rooquiz.com` 的 CNAME 在 Cloudflare DNS 里必须
 **DNS-only（灰云）**，走橙云会和 Vercel 的证书签发打架。
 
 发布链路：写入 API → Deploy Hook → 构建 → CDN。
