@@ -1,46 +1,75 @@
 /*
- * 设计 token。视觉稿见 docs/5bb4eb118bb50.mp4 —— 一个满幅左右分栏的编辑型版式：
- * 左侧一条窄影像带 + 一根贯通的竖发丝线，中央一张跨线的预览卡，
- * 右侧偏左处一栏很窄的正文，其余留白。
+ * 设计 token。
  *
- * 几何量全部用百分比 / vh 写，因为原稿是满幅设计（没有居中容器），
- * 换算成固定 px 在任何非 918px 宽的屏幕上比例都会塌。
- * 唯一封顶的是正文栏宽 —— 超宽屏上 26.2% 会变成 90 字符一行，没法读。
+ * 版式语言：一片天 + 一道彩虹拱门 + 一只坐着的袋鼠，下面接一栏居中的读物。
+ * 全站只有三种形状 —— 圆角矩形、胶囊、正圆，没有一处直角。
+ *
+ * 颜色分两族，别混用：
+ *   sky-* / cloud-*  只出现在英雄区（天空渐变与云层剪影），随明暗主题整体翻夜；
+ *   paper / ink / …  是内容区的底与字，天空之下的一切都用它们。
+ * 两族的交界永远是 --paper：最前面那层云的填充色就是 --paper，
+ * 所以云看起来是「纸从底下漫上来」，而不是叠在天上的一块白。
  *
  * 变量清单见 node_modules/@heroui/styles/dist/themes/default/variables.css。
  * 本文件不进 @layer，因此优先级高于 HeroUI 写在 @layer base 里的定义。
  */
 
 :root {
-  /* ---- 色 ---- */
+  /* ---- 天空（只给英雄区用） ---- */
+  --sky-1: #74c9ea; /* 顶端最深，导航压在这一段上 */
+  --sky-2: #a3ddf3;
+  --sky-3: #d2effb; /* 接近云层的浅端 */
+  --cloud-back: #bde5f7; /* 最远那层云 */
+  --cloud-mid: #dcf1fb;
+  /* 最前一层云 = --paper，见文件头 */
+
+  /* ---- 内容区 ---- */
   --paper: #ffffff;
-  --ink: #0a0a0a;
-  --muted: #6e6e6e;
-  /* 视觉稿里的洋红。取自视频中饱和度最高的像素（#e50389 / #de0088 一带） */
+  --surface: #f4f8fb; /* 卡片、代码块、无封面兜底砖 */
+  --ink: #21203a; /* 近黑但偏靛，纯黑在这套浅蓝里太硬 */
+  --muted: #64627f;
+  /* 品牌洋红。眉标、链接、强调都走它 */
   --accent: #e4008c;
   --accent-ink: #ffffff;
-  /* 发丝线。原稿是 1px 浅灰，用半透明黑让它在配图上压过去也成立 */
-  --rule: rgb(10 10 10 / 0.11);
-  --rule-strong: rgb(10 10 10 / 0.22);
-  /* 无封面时的兜底底色 */
-  --tile: #f2f0ec;
+  /* 次级强调：商标后半段、目录当前项、彩虹拱的冷端 */
+  --violet: #5b4bdb;
+  /* 分类胶囊 */
+  --chip: #d5ecf9;
+  --chip-ink: #1c3b50;
+  --chip-hover: #bfe2f6;
+  --rule: rgb(33 32 58 / 0.1);
+  --rule-strong: rgb(33 32 58 / 0.2);
+  /* 卡片浮起来那点影子。压得很低 —— 这套设计靠形状和色块，不靠阴影 */
+  --lift: 0 1px 2px rgb(33 32 58 / 0.05), 0 8px 24px -12px rgb(33 32 58 / 0.18);
+  --lift-hover: 0 2px 4px rgb(33 32 58 / 0.06), 0 16px 36px -14px rgb(33 32 58 / 0.24);
 
-  /* ---- 版式几何（原稿 918×656 换算） ---- */
-  --rail-w: 19.4%; /* 左影像带宽度，竖线就在它右沿 */
-  --band-t: 17.4vh; /* 中央影像带上沿（原稿 y=114） */
-  --band-h: 65.5vh; /* 中央影像带高度（原稿 430） */
-  --card-l: 8.2%; /* 预览卡左边缘 —— 刻意小于 rail-w，卡片要跨过竖线 */
-  --card-w: 30.5%;
-  --card-ratio: 1.233; /* 原稿 280×227 */
-  --col-l: 46.5%; /* 文字栏左边缘 */
-  --col-w: clamp(17rem, 27%, 28rem);
+  /* ---- 彩虹拱的环色（内 → 外） ---- */
+  /* 拱门是七条同心圆弧，每环一色：最内是热粉，向外经洋红 / 紫 / 靛走到深蓝。
+     环数改了要跟着增删这里的色标 —— RainbowArc 按 --arc-{i+1} 逐环取色。 */
+  --arc-1: #ff2f68;
+  --arc-2: #f31d86;
+  --arc-3: #d724a8;
+  --arc-4: #a92cc8;
+  --arc-5: #7b34d8;
+  --arc-6: #5138cf;
+  --arc-7: #3639ad;
+
+  /* ---- 几何 ---- */
+  --shell: 74rem; /* 内容最大宽（含两侧栏） */
+  --measure: 42rem; /* 正文单栏最大宽，约 68 字符 */
+  --gutter: clamp(1.25rem, 4vw, 3rem);
+  --hero-h: clamp(23rem, 42vw, 36rem); /* 首页英雄区高度，拱门按它缩放 */
+  --hero-h-sm: clamp(13rem, 26vw, 20rem); /* 内页那条矮天 */
+  --head-h: 4.5rem;
 
   /* ---- 字号 ---- */
-  --step-stamp: clamp(1.75rem, 3.7vw, 3.5rem); /* 日期大标题 */
-  --step-title: clamp(1.0625rem, 1.35vw, 1.375rem);
-  --step-body: clamp(0.9375rem, 1.15vw, 1.0625rem);
-  --step-micro: 0.6875rem; /* 导航 / 标签 / HERE 这类小字 */
-  --lh-body: 1.9; /* 原稿 14px/27px，非常松 */
+  --fs-display: clamp(2rem, 4.4vw, 3.25rem); /* 文章页 h1 */
+  --fs-h2: clamp(1.375rem, 2.4vw, 1.875rem); /* 列表里的文章标题 */
+  --fs-h3: clamp(1.125rem, 1.5vw, 1.3125rem);
+  --fs-body: clamp(1.0625rem, 0.42vw + 0.95rem, 1.1875rem);
+  --fs-small: 0.9375rem;
+  --fs-eyebrow: 0.8125rem;
+  --lh-body: 1.68;
 
   /* ---- 覆盖 HeroUI v3 语义变量 ---- */
   --foreground: var(--ink);
@@ -48,25 +77,46 @@
   --border: var(--rule);
   --separator: var(--rule);
   --link: var(--accent);
-  /* 原稿的控件是正圆和直角，没有中间态圆角 */
-  --radius: 0rem;
+  --radius: 0.875rem;
 }
 
 /*
- * 暗色。原稿只有浅色一版，这里按同一套关系翻过去：
- * 纸变墨、发丝线换成半透明白、洋红提亮一档（纯 #e4008c 在深底上发闷）。
- * 首版没有切换器，变量先就位。
+ * 暗色 = 把这片天变成夜空，而不是把白底反成黑底。
+ * 云层跟着变成深靛的层叠剪影，彩虹保持鲜亮（夜里它是唯一的光源，压暗就没意义了），
+ * 洋红与紫各提亮一档 —— 纯 #e4008c / #5b4bdb 在深底上发闷。
  */
 .dark,
 [data-theme='dark'] {
-  --paper: #0a0a0a;
-  --ink: #f4f4f4;
-  --muted: #9a9a9a;
-  --accent: #ff3ba7;
-  --accent-ink: #0a0a0a;
-  --rule: rgb(255 255 255 / 0.14);
-  --rule-strong: rgb(255 255 255 / 0.28);
-  --tile: #1a1a1a;
+  color-scheme: dark;
+
+  --sky-1: #0d0d24;
+  --sky-2: #17163a;
+  --sky-3: #211f4d;
+  --cloud-back: #1b1a45;
+  --cloud-mid: #191834;
+
+  --paper: #101021;
+  --surface: #1a1932;
+  --ink: #eceaf8;
+  --muted: #a3a1c2;
+  --accent: #ff52b1;
+  --accent-ink: #150a10;
+  --violet: #9d8cff;
+  --chip: #262445;
+  --chip-ink: #cdd7f8;
+  --chip-hover: #322f57;
+  --rule: rgb(236 234 248 / 0.12);
+  --rule-strong: rgb(236 234 248 / 0.26);
+  --lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --lift-hover: 0 2px 4px rgb(0 0 0 / 0.45), 0 16px 36px -14px rgb(0 0 0 / 0.7);
+
+  --arc-1: #ff4d7c;
+  --arc-2: #fb3796;
+  --arc-3: #e13fb8;
+  --arc-4: #b84fd8;
+  --arc-5: #8a58e8;
+  --arc-6: #6257e6;
+  --arc-7: #4a52c8;
 
   --foreground: var(--ink);
   --background: var(--paper);

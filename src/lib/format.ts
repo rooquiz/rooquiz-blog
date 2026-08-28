@@ -15,11 +15,11 @@ export function formatReadingTime(minutes: number, locale: Locale): string {
 }
 
 /**
- * 大标题上的日期戳。视觉稿里它是全页最大的字，走方形宽体展示字体（Anybody）。
+ * 紧凑日期戳。现在只有 OG 图用它（站内的日期一律走上面的 formatDate）。
  *
- * zh 下刻意不用「2026年8月27日」：Anybody 没有中日韩字形，「年月日」会掉进系统
- * 字体，一行里两套字重两套宽度，那个大字号下极其明显。改成纯数字点分，
- * 全字符都留在展示字体里。
+ * OG 图由 Satori 渲染，只喂了 Plus Jakarta Sans 的两个字重，没有中日韩字形 ——
+ * zh 下写「2026年8月27日」，「年月日」三个字会缺字形直接渲染成空白框。
+ * 所以中文走纯数字点分，全字符都留在拿得到的那份字体里。
  */
 export function formatStamp(iso: string, locale: Locale): string {
   const date = new Date(iso)

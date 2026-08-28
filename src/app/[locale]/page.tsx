@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { site } from '@config'
 
-import { getAllPosts, isLocale, localePath } from '@/lib/content'
+import { getAllPosts, getAllTags, isLocale, localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
 import { SiteFrame } from '@/components/layout/SiteFrame'
+import { CategoryRail } from '@/components/post/CategoryRail'
 import { Pager } from '@/components/post/Pager'
-import { PostStage } from '@/components/post/PostStage'
+import { PostFeed } from '@/components/post/PostFeed'
 
 export const dynamic = 'force-static'
 
@@ -24,24 +25,26 @@ export default async function BlogIndexPage({ params }: { params: Promise<{ loca
   const { locale } = await params
   if (!isLocale(locale)) notFound()
 
-  const posts = await getAllPosts(locale)
+  const [posts, tags] = await Promise.all([getAllPosts(locale), getAllTags(locale)])
   const totalPages = Math.max(1, Math.ceil(posts.length / site.pageSize))
   const copy = t(locale)
 
   return (
-    <SiteFrame
-      locale={locale}
-      localeHrefs={HOME_PATHS}
-      section="journal"
-      /*
-       * 视觉稿在这个位置没有大标题 —— 当前栏目是靠导航里那一项变洋红来指示的。
-       * h1 因此做成商标下方那行小型大写：语义上仍是页面标题，视觉上是一枚栏目标签。
-       */
-      eyebrow={<h1 className="u-micro head__eyebrow">{copy.journal}</h1>}
-    >
-      <main>
-        <PostStage posts={posts.slice(0, site.pageSize)} locale={locale} />
-        <Pager locale={locale} current={1} total={totalPages} />
+    /* 不传 hero —— 首页要的是拉满的那片天（彩虹拱 + 袋鼠），见 SiteFrame */
+    <SiteFrame locale={locale} localeHrefs={HOME_PATHS} section="journal">
+      <main className="shell home">
+        <div className="home__main">
+          {/*
+           * 页面的 h1 就是这行洋红眉标。视觉上它只是一枚栏目标签，语义上它确实是
+           * 「这一页是什么」—— 首页没有别的标题，天上那块是插画不是文字。
+           */}
+          <h1 className="u-eyebrow home__eyebrow">{copy.articlesEyebrow}</h1>
+
+          <PostFeed posts={posts.slice(0, site.pageSize)} locale={locale} />
+          <Pager locale={locale} current={1} total={totalPages} />
+        </div>
+
+        <CategoryRail tags={tags} locale={locale} />
       </main>
     </SiteFrame>
   )

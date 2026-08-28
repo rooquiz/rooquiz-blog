@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { LOCALES, site } from '@config'
 
-import { getAllPosts, isLocale, localePath } from '@/lib/content'
+import { getAllPosts, getAllTags, isLocale, localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
 import { SiteFrame } from '@/components/layout/SiteFrame'
+import { CategoryRail } from '@/components/post/CategoryRail'
 import { Pager } from '@/components/post/Pager'
-import { PostStage } from '@/components/post/PostStage'
+import { PostFeed } from '@/components/post/PostFeed'
 
 export const dynamic = 'force-static'
 export const dynamicParams = false
@@ -45,12 +46,11 @@ export default async function PagedIndexPage({ params }: { params: Promise<{ loc
   const current = Number(n)
   if (!Number.isInteger(current) || current < 2) notFound()
 
-  const posts = await getAllPosts(locale)
+  const [posts, tags] = await Promise.all([getAllPosts(locale), getAllTags(locale)])
   const totalPages = Math.max(1, Math.ceil(posts.length / site.pageSize))
   if (current > totalPages) notFound()
 
-  const offset = (current - 1) * site.pageSize
-  const slice = posts.slice(offset, current * site.pageSize)
+  const slice = posts.slice((current - 1) * site.pageSize, current * site.pageSize)
   const copy = t(locale)
 
   return (
@@ -58,12 +58,21 @@ export default async function PagedIndexPage({ params }: { params: Promise<{ loc
       locale={locale}
       localeHrefs={{ en: localePath('en'), zh: localePath('zh') }}
       section="journal"
-      eyebrow={<h1 className="u-micro head__eyebrow">{copy.pageN(current)}</h1>}
+      hero={
+        <>
+          <p className="u-eyebrow u-eyebrow--sky">{copy.articlesEyebrow}</p>
+          <h1 className="u-display">{copy.pageN(current)}</h1>
+        </>
+      }
     >
-      <main>
-        {/* offset 传下去，无封面时那块排版砖上的序号才是全站连续的 */}
-        <PostStage posts={slice} locale={locale} offset={offset} />
-        <Pager locale={locale} current={current} total={totalPages} />
+      <main className="shell home">
+        <div className="home__main">
+          {/* 第 2 页起没有头条：「最新一篇」这个身份只属于第一页 */}
+          <PostFeed posts={slice} locale={locale} showLead={false} />
+          <Pager locale={locale} current={current} total={totalPages} />
+        </div>
+
+        <CategoryRail tags={tags} locale={locale} />
       </main>
     </SiteFrame>
   )

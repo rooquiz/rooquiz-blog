@@ -8,10 +8,10 @@ const LABELS: Record<Locale, string> = { en: 'EN', zh: '中文' }
 
 /**
  * 语言切换。纯静态站不能在服务端知道「当前文章的另一语言版本存不存在」，
- * 所以由页面把 available 传进来：没有对应译文的语言直接不渲染，
- * 避免把用户送到 404。
+ * 所以由页面把 hrefs 传进来：没有对应译文的语言直接不渲染，避免把用户送到 404。
  *
- * 样式上跟着视觉稿：当前语言是墨色，其它语言灰、hover 变洋红，中间一条竖发丝线。
+ * 样式上是一枚小胶囊里挤着两个按钮，当前语言有一层纸色的底 —— 和右边那组圆按钮
+ * 同一套语言，但它是「二选一」而不是「按一下」，所以用底色而不是图标来表达状态。
  */
 export function LocaleSwitcher({ current, hrefs }: { current: Locale; hrefs: Partial<Record<Locale, string>> }) {
   const pathname = usePathname()
@@ -21,23 +21,21 @@ export function LocaleSwitcher({ current, hrefs }: { current: Locale; hrefs: Par
   if (available.length < 2) return null
 
   return (
-    <span className="flex items-center gap-2.5">
-      {available.map((locale, index) => {
+    <span className="locales">
+      {available.map(locale => {
         const href = hrefs[locale]!
         const isCurrent = locale === current
 
         return (
-          <span key={locale} className="flex items-center gap-2.5">
-            {index > 0 && <span className="h-2.5 w-px bg-[var(--rule-strong)]" aria-hidden />}
-            <Link
-              href={href}
-              aria-current={isCurrent ? 'true' : undefined}
-              prefetch={href !== pathname}
-              className={isCurrent ? 'text-[var(--ink)]' : 'text-[var(--muted)] hover:text-[var(--accent)]'}
-            >
-              {LABELS[locale]}
-            </Link>
-          </span>
+          <Link
+            key={locale}
+            href={href}
+            aria-current={isCurrent ? 'true' : undefined}
+            prefetch={href !== pathname}
+            lang={locale}
+          >
+            {LABELS[locale]}
+          </Link>
         )
       })}
     </span>

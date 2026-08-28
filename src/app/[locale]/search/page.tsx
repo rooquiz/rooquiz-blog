@@ -22,10 +22,21 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
   const { locale } = await params
   if (!isLocale(locale)) notFound()
 
+  const copy = t(locale)
+
   return (
-    <SiteFrame locale={locale} localeHrefs={SEARCH_PATHS} section="search">
-      <main className="page">
-        <h1 className="page__title">{t(locale).search}</h1>
+    <SiteFrame
+      locale={locale}
+      localeHrefs={SEARCH_PATHS}
+      section="search"
+      hero={
+        <>
+          <p className="u-eyebrow u-eyebrow--sky">{copy.journal}</p>
+          <h1 className="u-display">{copy.search}</h1>
+        </>
+      }
+    >
+      <main className="shell shell--narrow page">
         <SearchClient locale={locale} />
       </main>
     </SiteFrame>

@@ -1,51 +1,46 @@
-import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { site, type Locale } from '@config'
+import type { Locale } from '@config'
 
 import { localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
+import { Wordmark } from '@/components/brand/Wordmark'
 
+import { RssIcon, SearchIcon } from './Icons'
 import { LocaleSwitcher } from './LocaleSwitcher'
+import { ThemeToggle } from './theme'
 
 /**
- * 站点头。视觉稿里它是一层固定浮层，不占文档流也不带下边框 ——
- * 文字商标压在左影像带上，导航贴到右侧留白里。
+ * 站点头。它不是固定浮层 —— 常驻在英雄区那片天里，随页面一起滚走（理由见 Sky.tsx）。
  *
- * Server Component：只有语言切换器要读 pathname，那一小块单独隔离，
+ * 分工：左边商标 + 两个栏目链接（文字，用来导航），右边三枚圆按钮 + 语言切换
+ * （图标，用来切换视图）。搜索被放在右边那组而不是左边的栏目里，
+ * 因为它和「明暗」「订阅」一样是随时可用的工具，不是内容的一个分区。
+ *
+ * Server Component：只有明暗切换和语言切换需要浏览器，各自单独隔离，
  * 其余不进 JS bundle。
  */
 export function SiteHeader({
   locale,
   localeHrefs,
-  /** 当前栏目，用来给导航项上洋红（原稿里高亮的是 NEWS） */
+  /** 当前栏目，用来给对应导航项上洋红 */
   section,
-  /** 商标下方那行小型大写。列表页把 h1 放这儿 —— 视觉稿在这个位置没有大标题 */
-  eyebrow,
 }: {
   locale: Locale
   localeHrefs: Partial<Record<Locale, string>>
   section?: 'journal' | 'tags' | 'search'
-  eyebrow?: ReactNode
 }) {
   const copy = t(locale)
 
   const items = [
     { key: 'journal', href: localePath(locale), label: copy.journal },
-    { key: 'tags', href: localePath(locale, 'tags'), label: copy.tags },
-    { key: 'search', href: localePath(locale, 'search'), label: copy.search },
+    { key: 'tags', href: localePath(locale, 'tags'), label: copy.categories },
   ] as const
 
   return (
     <header className="head">
-      <div className="head__brand">
-        <Link href={localePath(locale)} className="head__mark" aria-label={site.locales[locale].title}>
-          RooQuiz
-          <span>Blog</span>
-        </Link>
-        {eyebrow}
-      </div>
+      <Wordmark locale={locale} />
 
-      <nav className="head__nav u-micro">
+      <nav className="head__nav" aria-label={copy.primaryNav}>
         {items.map(item => (
           <Link
             key={item.key}
@@ -56,8 +51,23 @@ export function SiteHeader({
             {item.label}
           </Link>
         ))}
-        <LocaleSwitcher current={locale} hrefs={localeHrefs} />
       </nav>
+
+      <div className="head__tools">
+        <Link
+          href={localePath(locale, 'search')}
+          className="head__icon"
+          aria-label={copy.search}
+          aria-current={section === 'search' ? 'page' : undefined}
+        >
+          <SearchIcon />
+        </Link>
+        <ThemeToggle label={copy.toggleTheme} />
+        <Link href={localePath(locale, 'feed.xml')} className="head__icon" aria-label={copy.rss}>
+          <RssIcon />
+        </Link>
+        <LocaleSwitcher current={locale} hrefs={localeHrefs} />
+      </div>
     </header>
   )
 }

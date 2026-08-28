@@ -2,28 +2,38 @@ import Link from 'next/link'
 import { site, type Locale } from '@config'
 
 import { localePath } from '@/lib/content'
+import { t } from '@/lib/i18n'
+import { Kangaroo } from '@/components/brand/Kangaroo'
 
 /**
- * 页脚。视觉稿里没有页脚，这里按同一套语言补一个最轻的：
- * 一条发丝线 + 一行小型大写，左侧对齐到影像带内，右侧对齐到导航那条边。
+ * 页脚。一条浅底的带子，左边一只小袋鼠 + 版权，右边几个链接。
+ *
+ * 袋鼠在这里再出现一次是有意的：它在页首是插画（大、彩色、居中），
+ * 在页尾是签名（小、安静、靠左）。同一个形象在一页里换两种身份，
+ * 比在页尾放一个 logo 更能把整页收住。
  */
 export function SiteFooter({ locale }: { locale: Locale }) {
+  const copy = t(locale)
+
   return (
-    <footer className="border-t border-[var(--rule)]">
-      <div className="u-micro flex flex-wrap items-center justify-between gap-4 py-8 pr-[6.9%] pl-[4.8%] text-[var(--muted)]">
-        <p>
-          © {new Date().getUTCFullYear()}{' '}
-          <a href={site.organization.url} className="hover:text-[var(--accent)]">
-            {site.organization.name}
-          </a>
-        </p>
-        <nav className="flex items-center gap-6">
-          <Link href={localePath(locale, 'feed.xml')} className="hover:text-[var(--accent)]">
-            RSS
-          </Link>
-          <a href={site.organization.url} className="hover:text-[var(--accent)]">
-            rooquiz.com
-          </a>
+    <footer className="foot">
+      <div className="shell foot__inner">
+        <div className="foot__left">
+          <Kangaroo idPrefix="foot-roo" className="foot__roo" simplified />
+          <p>
+            © {new Date().getUTCFullYear()}{' '}
+            <a href={site.organization.url} className="hover:text-[var(--accent)]">
+              {site.organization.name}
+            </a>
+          </p>
+        </div>
+
+        <nav className="foot__nav" aria-label={copy.footerNav}>
+          <Link href={localePath(locale)}>{copy.journal}</Link>
+          <Link href={localePath(locale, 'tags')}>{copy.categories}</Link>
+          <Link href={localePath(locale, 'search')}>{copy.search}</Link>
+          <Link href={localePath(locale, 'feed.xml')}>{copy.rss}</Link>
+          <a href={site.organization.url}>rooquiz.com</a>
         </nav>
       </div>
     </footer>

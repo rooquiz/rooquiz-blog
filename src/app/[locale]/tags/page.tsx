@@ -14,7 +14,7 @@ const TAGS_PATHS = { en: localePath('en', 'tags'), zh: localePath('zh', 'tags') 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   if (!isLocale(locale)) return {}
-  return buildMetadata({ locale, title: t(locale).tags, paths: TAGS_PATHS })
+  return buildMetadata({ locale, title: t(locale).categories, paths: TAGS_PATHS })
 }
 
 export default async function TagsIndexPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -25,19 +25,27 @@ export default async function TagsIndexPage({ params }: { params: Promise<{ loca
   const copy = t(locale)
 
   return (
-    <SiteFrame locale={locale} localeHrefs={TAGS_PATHS} section="tags">
-      <main className="page">
-        <h1 className="page__title">{copy.tags}</h1>
-
+    <SiteFrame
+      locale={locale}
+      localeHrefs={TAGS_PATHS}
+      section="tags"
+      hero={
+        <>
+          <p className="u-eyebrow u-eyebrow--sky">{copy.browseByCategory}</p>
+          <h1 className="u-display">{copy.categories}</h1>
+        </>
+      }
+    >
+      <main className="shell page">
         {tags.length === 0 ? (
           <p className="page__empty">{copy.empty}</p>
         ) : (
-          <ul className="tagcloud u-micro">
+          <ul className="tagcloud">
             {tags.map(({ tag, count }) => (
               <li key={tag}>
-                <Link href={localePath(locale, 'tags', tag)}>
+                <Link href={localePath(locale, 'tags', tag)} className="chip">
                   {tag}
-                  <span>{count}</span>
+                  <span className="chip__count">{count}</span>
                 </Link>
               </li>
             ))}

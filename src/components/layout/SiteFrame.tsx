@@ -3,36 +3,40 @@ import type { Locale } from '@config'
 
 import { SiteFooter } from './SiteFooter'
 import { SiteHeader } from './SiteHeader'
+import { Sky } from './Sky'
 
 /**
- * 页面外壳：固定站点头 + 贯通全页的竖发丝线 + 页脚。
+ * 页面外壳：一片天（头部压在里面）+ 内容 + 页脚。
  *
- * 竖线单独一个固定元素而不是每块内容各画一段 —— 视觉稿里它是一根不断的线，
- * 分段画在滚动时接缝会错开半个像素。
- *
- * frame__mask 是左影像带的固定窗口遮罩，frame__veil 是顶部那层保证导航可读的薄纱，
- * 两者的原因都写在 stage.css 里。
+ * 传了 hero 就是内页 —— 天缩矮，标题块排在云上方的空里；
+ * 不传就是首页 —— 天拉满，让彩虹拱和袋鼠占住整个第一屏。
+ * 换句话说「有没有标题」和「天有多高」是同一个决定，调用处不用分别指定。
  */
 export function SiteFrame({
   locale,
   localeHrefs,
   section,
-  eyebrow,
+  hero,
   children,
 }: {
   locale: Locale
   localeHrefs: Partial<Record<Locale, string>>
   section?: 'journal' | 'tags' | 'search'
-  eyebrow?: ReactNode
+  /** 内页的标题块（眉标 + h1 + 元信息）。首页不传 */
+  hero?: ReactNode
   children: ReactNode
 }) {
   return (
     <>
-      <SiteHeader locale={locale} localeHrefs={localeHrefs} section={section} eyebrow={eyebrow} />
-      <div className="frame__rule" aria-hidden />
-      <div className="frame__mask" aria-hidden />
-      <div className="frame__veil" aria-hidden />
+      <Sky size={hero ? 'short' : 'tall'}>
+        <div className="shell">
+          <SiteHeader locale={locale} localeHrefs={localeHrefs} section={section} />
+        </div>
+        {hero && <div className="shell sky__title">{hero}</div>}
+      </Sky>
+
       {children}
+
       <SiteFooter locale={locale} />
     </>
   )

@@ -22,7 +22,8 @@ export default function KitchenSinkPage() {
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">HeroUI v3 · brand token check</h1>
         <p className="text-[var(--muted)]">
-          下面每个组件的主色都应该是品牌紫 <code>#6e3cff</code>，而不是 HeroUI 默认的蓝色。
+          下面每个组件的主色都应该是站点的洋红 <code>--accent</code>（浅色下 <code>#e4008c</code>），
+          圆角应该是 <code>--radius</code>，而不是 HeroUI 默认的蓝色与默认圆角。
         </p>
       </header>
 

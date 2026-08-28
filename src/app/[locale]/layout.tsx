@@ -1,12 +1,13 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { notFound } from 'next/navigation'
-import { Anybody, Space_Grotesk } from 'next/font/google'
+import { Figtree } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { LOCALES, site, type Locale } from '@config'
 
 import { absoluteUrl } from '@/lib/seo'
+import { ThemeScript } from '@/components/layout/theme'
 
 import '@/styles/globals.css'
 
@@ -17,27 +18,28 @@ import '@/styles/globals.css'
  */
 
 /**
- * 展示字体。视觉稿的日期大标题是 Eurostile Bold Extended 那一路的方形宽体，
- * Google Fonts 里只有 Anybody 对得上（它带 wdth 可变轴，所以宽度是选出来的
- * 而不是横向拉伸出来的 —— 拉伸会让竖笔画变粗、横笔画不变，一眼假）。
- * 这里只声明 wdth 轴，具体取值在 CSS 里按用途给（标题 125，小字 112）。
+ * 全站一款字 Figtree，选它的完整理由见 styles/globals.css 顶部。
+ * 只取拉丁子集 —— 中文本来就落到系统 CJK 字体。
  */
-const display = Anybody({
-  subsets: ['latin'],
-  axes: ['wdth'],
-  display: 'swap',
-  variable: '--next-font-display',
-})
-
-/** 正文。原稿正文那个平顶的「3」和双层「a」就是 Space Grotesk */
-const body = Space_Grotesk({
+const sans = Figtree({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--next-font-body',
+  variable: '--next-font-sans',
 })
 
 export function generateStaticParams() {
   return LOCALES.map(locale => ({ locale }))
+}
+
+/**
+ * 浏览器 UI（地址栏、下拉回弹区）的底色跟着天空走，不跟正文底色走 ——
+ * 页面最顶端是那片蓝，地址栏染成白色会在天上方切出一条突兀的边。
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#74c9ea' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d0d24' },
+  ],
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -73,8 +75,12 @@ export default async function LocaleLayout({
   if (!isLocale(locale)) notFound()
 
   return (
-    <html lang={locale} className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+    /* suppressHydrationWarning：ThemeScript 会在水合之前往 <html> 上写 data-theme，
+       服务端渲染的属性集和客户端首帧对不上是预期内的 */
+    <html lang={locale} className={sans.variable} suppressHydrationWarning>
       <body>
+        {/* 必须是 body 的第一个子节点 —— 它要在页面内容被解析出来之前跑完，否则会闪一下浅色 */}
+        <ThemeScript />
         {children}
         <Analytics />
         <SpeedInsights />

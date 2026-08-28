@@ -2,54 +2,71 @@
 @import 'tailwindcss';
 @import '@heroui/styles';
 @import './tokens.css';
-@import './stage.css';
+@import './sky.css';
+@import './site.css';
+@import './motion.css';
 
 @plugin '@tailwindcss/typography';
 
 /*
- * 两款字体都由 next/font 在 layout 里注入 --font-display / --font-body。
+ * 全站一款字：Figtree（next/font 在 layout 里注入 --next-font-sans）。
  *
- * 展示字体 Anybody（wdth 125 / wght 800）：视觉稿的日期大标题是 Eurostile
- * Bold Extended 那一路的方形宽体，Google Fonts 里同族只有 Anybody 对得上
- * （对比图见提交说明）。它带 wdth 可变轴，所以宽度是设出来的而不是拉出来的。
+ * 选它是逐字比对挑出来的：几何骨架 + 很高的 x-height + 近乎正圆的 o，
+ * 单层 g 带一个开口的钩尾、C 的开口很敞、A 是尖顶且偏宽 —— 这几处正是
+ * 这套「天空 + 袋鼠」的调性要的圆润感。
+ * 落选的几款各差在哪：Plus Jakarta Sans 偏窄偏方，太「科技创业」；
+ * Outfit 太纯几何，字距紧、发冷；Rubik 过宽过重；Nunito Sans 的终端全圆，
+ * 会把整站推到儿童读物那边去。
  *
- * 正文 Space Grotesk 300：原稿正文那个平顶的「3」和双层「a」就是它。
- *
- * 两款都没有中日韩字形，中文一律落到系统 CJK 字体 —— 所以展示字体只用来排
- * 数字与拉丁字母（日期在 zh 下走 2026.08.27 而不是「2026年8月27日」，
- * 见 lib/format.ts 的 formatStamp）。
+ * 它没有中日韩字形，中文一律落到系统 CJK 字体。所以任何要和拉丁字混排的地方
+ * 都别指望字重对得上：日期戳统一走数字（见 lib/format.ts），
+ * 眉标那种全大写 + 大字距的处理在中文下自动退化成正常字距（见 .u-eyebrow）。
  */
 @theme {
-  --font-display: var(--stack-display);
-  --font-body: var(--stack-body);
+  --font-sans: var(--stack-sans);
 }
 
 :root {
-  --stack-display:
-    var(--next-font-display), 'Anybody', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui,
-    sans-serif;
-  --stack-body:
-    var(--next-font-body), 'Space Grotesk', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
+  --stack-sans:
+    var(--next-font-sans), 'Figtree', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
     system-ui, sans-serif;
+  --stack-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 }
 
 html {
   background: var(--paper);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
+  /* 锚点跳转（正文目录）落位时别顶到固定站点头底下 */
+  scroll-padding-block-start: calc(var(--head-h) + 1.5rem);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /*
- * flex 列 + min-height，让内容少的页面（标签、空搜索）页脚也贴到底部，
- * 而不是吊在屏幕中间。固定定位的头部 / 竖线 / 遮罩不在流里，不受影响。
+ * flex 列 + min-height，让内容少的页面（标签、空搜索）页脚也贴到底部。
+ * body 的底色是 --paper —— 天空只画在英雄区那个盒子里，不铺到整页。
  */
 body {
   min-height: 100dvh;
+  /*
+   * 横向溢出的兜底。当前版面没有溢出（各断点量过），这条是给英雄区留的保险：
+   * 天空、云、彩虹拱都是满幅并且刻意画到画布之外，将来动它们的尺寸时
+   * 多出一两个像素就会让整站能左右拖动，在手机上非常明显。
+   * 用 clip 不用 hidden：hidden 会把 body 变成滚动容器，
+   * 里面那些 position:sticky 的边栏与目录会当场失效。
+   */
+  overflow-x: clip;
   display: flex;
   flex-direction: column;
-  font-family: var(--stack-body);
-  font-weight: 300;
-  font-size: var(--step-body);
+  background: var(--paper);
+  font-family: var(--stack-sans);
+  font-weight: 400;
+  font-size: var(--fs-body);
   line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -64,76 +81,133 @@ body > main {
   color: var(--accent-ink);
 }
 
-/* 焦点环用洋红方框而不是默认圆角光圈 —— 全站没有圆角 */
+/* 焦点环用洋红圆角框，跟全站的圆角语言一致 */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+  border-radius: 0.35rem;
 }
 
 /* ---------------------------------------------------------------------------
- * 排版原子。视觉稿里只有三种字：日期大标题、正文、小型大写标签。
- * 用类而不是 @utility，因为它们都带多条属性且要在 CSS 里被复用。
+ * 排版原子
  * ------------------------------------------------------------------------- */
 
-/** 日期大标题。方形宽体 + 全大写 + 极小字距 */
-.u-stamp {
-  font-family: var(--stack-display);
+/**
+ * 眉标：洋红、全大写、大字距的一行小字。整套设计里最醒目的一个信号 ——
+ * 每一块内容都由它起头（ARTICLES / BROWSE BY CATEGORY / …）。
+ */
+.u-eyebrow {
+  font-size: var(--fs-eyebrow);
   font-weight: 800;
-  font-variation-settings: 'wdth' 125;
-  font-size: var(--step-stamp);
-  line-height: 0.94;
-  letter-spacing: 0.015em;
+  line-height: 1.3;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-variant-numeric: lining-nums tabular-nums;
-}
-
-/** 导航 / 标签 / 「阅读」这类小字：同一款展示体，压窄、加字距 */
-.u-micro {
-  font-family: var(--stack-display);
-  font-weight: 700;
-  font-variation-settings: 'wdth' 112;
-  font-size: var(--step-micro);
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-/** 文章标题：展示体但收窄到接近常规宽度，否则长标题排不下 */
-.u-title {
-  font-family: var(--stack-display);
-  font-weight: 800;
-  font-variation-settings: 'wdth' 100;
-  font-size: var(--step-title);
-  line-height: 1.22;
-  letter-spacing: 0.005em;
-}
-
-/** 原稿里的 HERE：小型大写 + 下划线，下划线离字有一点距离 */
-.u-cue {
-  display: inline-block;
-  text-decoration: underline;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 5px;
-  transition: color 0.18s ease;
-}
-
-.u-cue:hover {
   color: var(--accent);
 }
 
+/* 中文没有大小写，全大写是空操作，但 0.12em 字距会把词拆散 —— 收回去 */
+:lang(zh) .u-eyebrow {
+  letter-spacing: 0.04em;
+}
+
+/** 元信息小字：日期、阅读时长、作者 */
+.u-meta {
+  font-size: var(--fs-small);
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/** 页面主标题 */
+.u-display {
+  font-size: var(--fs-display);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+/** 列表里的文章标题 */
+.u-h2 {
+  font-size: var(--fs-h2);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+/** 导语 / 摘要 */
+.u-lede {
+  color: var(--muted);
+  line-height: 1.62;
+}
+
+/** 洋红的「继续读 →」。箭头在 hover 时往右挪一点 */
+.u-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.u-more svg {
+  width: 0.85em;
+  height: 0.85em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: translate 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.u-more:hover svg {
+  translate: 0.2em 0;
+}
+
+/** 分类胶囊。淡蓝底 + 深蓝字，是这套设计里唯一的「填充色控件」 */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  border-radius: 999px;
+  background: var(--chip);
+  padding: 0.4em 0.9em;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--chip-ink);
+  transition:
+    background-color 0.18s ease,
+    translate 0.18s ease;
+}
+
+a.chip:hover {
+  background: var(--chip-hover);
+  translate: 0 -1px;
+}
+
+.chip__count {
+  font-size: 0.85em;
+  font-weight: 700;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------------------------------------------------------------------------
- * MDX 正文。prose 归 @tailwindcss/typography，这里把它的灰调换成本套 token，
- * 并把标题接到展示体上 —— 否则正文里的 h2/h3 会和站点其它地方是两套字。
+ * MDX 正文。prose 归 @tailwindcss/typography，这里把它的灰调换成本套 token。
  * ------------------------------------------------------------------------- */
 
 .prose {
   --tw-prose-body: var(--ink);
   --tw-prose-headings: var(--ink);
   --tw-prose-lead: var(--muted);
-  --tw-prose-links: var(--ink);
+  --tw-prose-links: var(--accent);
   --tw-prose-bold: var(--ink);
   --tw-prose-counters: var(--muted);
-  --tw-prose-bullets: var(--rule-strong);
+  --tw-prose-bullets: var(--accent);
   --tw-prose-hr: var(--rule);
   --tw-prose-quotes: var(--ink);
   --tw-prose-quote-borders: var(--accent);
@@ -141,22 +215,21 @@ body > main {
   --tw-prose-th-borders: var(--rule);
   --tw-prose-td-borders: var(--rule);
   max-width: none;
-  font-size: var(--step-body);
+  font-size: var(--fs-body);
   line-height: var(--lh-body);
 }
 
 .prose :is(h2, h3, h4) {
-  font-family: var(--stack-display);
   font-weight: 800;
-  font-variation-settings: 'wdth' 100;
-  letter-spacing: 0.005em;
+  letter-spacing: -0.018em;
+  scroll-margin-block-start: calc(var(--head-h) + 1.5rem);
 }
 
 .prose h2 {
-  font-size: 1.5em;
-  margin-top: 2.4em;
-  margin-bottom: 0.9em;
-  line-height: 1.2;
+  font-size: 1.45em;
+  margin-top: 2.2em;
+  margin-bottom: 0.7em;
+  line-height: 1.22;
 }
 
 .prose h3 {
@@ -164,28 +237,36 @@ body > main {
   line-height: 1.3;
 }
 
-/* 正文链接：墨色 + 洋红下划线，hover 整个变洋红。不用纯色链接，正文里太跳 */
+/* 正文链接：洋红 + 洋红下划线，hover 时下划线加粗。整段里认得出来但不刺眼 */
 .prose a {
+  font-weight: 600;
   text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 4px;
-  transition: color 0.18s ease;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.18s ease;
 }
 
 .prose a:hover {
-  color: var(--accent);
+  text-decoration-color: var(--accent);
 }
 
 .prose strong {
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .prose blockquote {
-  border-inline-start-width: 2px;
+  border-inline-start-width: 3px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface);
   font-style: normal;
-  font-weight: 300;
-  padding-inline-start: 1.4em;
+  font-weight: 400;
+  padding: 0.9em 1.4em;
+}
+
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after {
+  content: none;
 }
 
 /* Shiki 输出带内联样式的 <pre>，prose 的代码块底色要让位 */
@@ -193,20 +274,25 @@ body > main {
   background-color: transparent;
   padding: 0;
   border: 1px solid var(--rule);
-  border-radius: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 
 .prose pre > code {
   display: block;
   overflow-x: auto;
-  padding: 1rem 1.25rem;
+  padding: 1.1rem 1.35rem;
+  font-family: var(--stack-mono);
   font-size: 0.875em;
   line-height: 1.7;
 }
 
 .prose :not(pre) > code {
+  font-family: var(--stack-mono);
   font-size: 0.875em;
-  background: var(--tile);
+  font-weight: 500;
+  background: var(--surface);
+  border-radius: 0.35rem;
   padding: 0.15em 0.4em;
 }
 
@@ -216,7 +302,7 @@ body > main {
 }
 
 .prose img {
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 
 /*
@@ -232,6 +318,7 @@ body > main {
 .prose :is(h2, h3, h4) > a.heading-anchor:hover {
   color: inherit;
   text-decoration: none;
+  font-weight: inherit;
 }
 
 /* hover 时在标题左侧露出一个洋红的 # 作为可点提示，不占正文的位置 */

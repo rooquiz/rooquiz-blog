@@ -1,0 +1,635 @@
+/*
+ * 天空之下的一切：内容外框、首页两栏、文章页、页脚。
+ *
+ * 一条贯穿的规矩：这里没有任何直角，也几乎没有分隔线。
+ * 版面靠留白和圆角色块分组 —— 英雄区已经很热闹了，正文区再加边框会显得脏。
+ * 需要「这是一块」的地方用 .card（圆角 + 极浅的投影），
+ * 需要「这是一组的开头」的地方用 .u-eyebrow（洋红小字），仅此两种。
+ */
+
+/* ---------------------------------------------------------------------------
+ * 内容外框
+ * ------------------------------------------------------------------------- */
+
+.shell {
+  width: 100%;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/** 单栏读物用的窄框，宽度按可读行长（约 68 字符）定，不按栅格 */
+.shell--narrow {
+  max-width: calc(var(--measure) + 2 * var(--gutter));
+}
+
+.card {
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--lift);
+  transition:
+    box-shadow 0.22s ease,
+    translate 0.22s ease;
+}
+
+a.card:hover {
+  box-shadow: var(--lift-hover);
+  translate: 0 -2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 首页：正文栏 + 右侧边栏
+ * ------------------------------------------------------------------------- */
+
+.home {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3rem, 8vw, 6rem);
+}
+
+@media (max-width: 61.99rem) {
+  /* 边栏落到正文之后。分类是二级信息，不该在小屏上挡在文章前面 */
+  .home {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 页面 h1（那行洋红眉标）与文章流之间的距离 */
+.home__eyebrow {
+  margin-block-end: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.home__side {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 4vw, 2.75rem);
+  /* 边栏比正文短得多，跟着滚一段再停 */
+  position: sticky;
+  inset-block-start: 1.5rem;
+  align-self: start;
+}
+
+@media (max-width: 61.99rem) {
+  .home__side {
+    position: static;
+  }
+}
+
+.side__block > .u-eyebrow {
+  margin-block-end: 0.9rem;
+}
+
+.side__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/** 边栏里的小卡片（订阅、关于） */
+.side__card {
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 1.1rem 1.2rem;
+}
+
+.side__card p {
+  font-size: var(--fs-small);
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.side__card .u-more {
+  margin-block-start: 0.75rem;
+  font-size: var(--fs-small);
+}
+
+/** 关于卡里那只小袋鼠，靠右下角坐着 */
+.side__roo {
+  display: block;
+  width: auto;
+  height: 4.5rem;
+  margin-inline-start: auto;
+  margin-block-start: -1.75rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * 文章列表
+ *
+ * 第一篇铺一张宽封面，其余走「缩略图 + 文字」的横条。
+ * 差别是刻意的：一屏之内只该有一个视觉重心，十篇都铺大图等于没有重心。
+ * ------------------------------------------------------------------------- */
+
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.25rem, 4.5vw, 3.25rem);
+}
+
+.feed__item {
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  align-items: start;
+}
+
+/** 头条：封面拉满，文字排在它下面 */
+.feed__item--lead {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 39.99rem) {
+  .feed__item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.feed__cover {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface);
+  aspect-ratio: 4 / 3;
+  box-shadow: var(--lift);
+  transition:
+    box-shadow 0.22s ease,
+    translate 0.22s ease;
+}
+
+.feed__item--lead .feed__cover {
+  aspect-ratio: 3 / 2;
+}
+
+.feed__cover:hover {
+  box-shadow: var(--lift-hover);
+  translate: 0 -2px;
+}
+
+.feed__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: scale 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.feed__cover:hover img {
+  scale: 1.04;
+}
+
+/*
+ * 无封面时的兜底：淡蓝底 + 一只小袋鼠。
+ * 不留白格 —— 列表靠图建立节奏，缺一张就会在那一行塌下去。
+ */
+.feed__fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(150deg, var(--chip), var(--surface));
+}
+
+.feed__fallback svg {
+  width: auto;
+  height: 58%;
+  opacity: 0.85;
+}
+
+.feed__title {
+  margin-block-start: 0.5rem;
+}
+
+.feed__item--lead .feed__title {
+  font-size: clamp(1.625rem, 3vw, 2.25rem);
+}
+
+.feed__title a {
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+
+.feed__title a:hover {
+  color: var(--accent);
+}
+
+.feed__summary {
+  margin-block-start: 0.7rem;
+  color: var(--muted);
+  line-height: 1.6;
+  /* 摘要在列表里最多给四行，长摘要会把下一篇顶出首屏 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.feed__foot {
+  margin-block-start: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.feed__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feed__meta > * + *::before {
+  content: '·';
+  margin-inline-end: 0.5rem;
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------------------
+ * 分页
+ * ------------------------------------------------------------------------- */
+
+.pager {
+  margin-block-start: clamp(2.5rem, 5vw, 4rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pager__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  background: var(--chip);
+  padding: 0.55rem 1.1rem;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  color: var(--chip-ink);
+  transition:
+    background-color 0.18s ease,
+    translate 0.18s ease;
+}
+
+.pager__link:hover {
+  background: var(--chip-hover);
+  translate: 0 -1px;
+}
+
+.pager__link[aria-disabled] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.pager__count {
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * 文章页
+ * ------------------------------------------------------------------------- */
+
+.article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14rem;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding-block: clamp(2rem, 5vw, 3.5rem) clamp(3rem, 7vw, 5rem);
+}
+
+@media (max-width: 67.99rem) {
+  .article {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.article__body {
+  max-width: var(--measure);
+  /* 在自己那一列里居中。靠左的话正文与右侧目录之间会空出一大条，读起来像掉了一栏 */
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.article__cover {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--surface);
+  /* 封面按 1000×800（5:4）出稿，3:2 只切掉约 17% 的高；16:9 会把主体切飞 */
+  aspect-ratio: 3 / 2;
+  margin-block-end: clamp(2rem, 4vw, 2.75rem);
+  box-shadow: var(--lift);
+}
+
+.article__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/** 侧栏目录。宽屏时吸在右侧跟着滚 */
+.article__aside {
+  position: sticky;
+  inset-block-start: 1.5rem;
+  align-self: start;
+}
+
+@media (max-width: 67.99rem) {
+  /*
+   * 窄屏把目录挪到正文之前而不是藏掉：它是这篇文章的结构预告，
+   * 手机上恰恰是最需要的东西。用 order 换位，DOM 顺序保持「正文在前」，
+   * 读屏器不会先听到一串锚点。
+   */
+  .article__aside {
+    position: static;
+    order: -1;
+    max-width: var(--measure);
+    margin-inline: auto;
+    width: 100%;
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 1rem 1.25rem;
+  }
+}
+
+.toc__list {
+  margin-block-start: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.toc__list a {
+  display: block;
+  font-size: var(--fs-small);
+  line-height: 1.4;
+  color: var(--muted);
+  border-inline-start: 2px solid var(--rule);
+  padding-inline-start: 0.75rem;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.toc__list a:hover {
+  color: var(--accent);
+  border-inline-start-color: var(--accent);
+}
+
+.toc__list li[data-depth='3'] a {
+  padding-inline-start: 1.5rem;
+}
+
+/** 正文末尾的标签行 */
+.article__tags {
+  margin-block-start: clamp(2.5rem, 5vw, 3.5rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/** 上一篇 / 下一篇 */
+.article__nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-block-start: clamp(2rem, 4vw, 3rem);
+}
+
+@media (max-width: 39.99rem) {
+  .article__nav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.article__neighbour {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.article__neighbour--next {
+  text-align: end;
+  align-items: flex-end;
+}
+
+.article__neighbour-title {
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+
+.article__neighbour:hover .article__neighbour-title {
+  color: var(--accent);
+}
+
+/** 空位。没有上一篇时留一个透明格，保证下一篇仍然靠右 */
+.article__neighbour--empty {
+  visibility: hidden;
+}
+
+.article__back {
+  margin-block-start: clamp(2rem, 4vw, 3rem);
+  display: flex;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * 通用内页（标签 / 标签归档 / 搜索）
+ * ------------------------------------------------------------------------- */
+
+.page {
+  padding-block: clamp(2.5rem, 6vw, 4rem) clamp(3rem, 8vw, 6rem);
+}
+
+.page__empty {
+  color: var(--muted);
+}
+
+/** 标签云。字号随文章数变，多的标签更大 —— 一眼看得出哪些是主线 */
+.tagcloud {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+/* ---- 搜索 ---- */
+
+.search__field {
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0.85rem 1.4rem;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.18s ease;
+}
+
+.search__field::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.search__field:focus {
+  border-color: var(--accent);
+}
+
+/* search 类型的输入框在 WebKit 里自带一个清除按钮，样式和这套圆角对不上 */
+.search__field::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.search__count {
+  margin-block: 1.25rem;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
+/* ---- 搜索结果 / 标签归档共用的紧凑列表 ---- */
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row__link {
+  display: block;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  transition: background-color 0.18s ease;
+}
+
+.row__link:hover {
+  background: var(--surface);
+}
+
+.row__title {
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+
+.row__link:hover .row__title {
+  color: var(--accent);
+}
+
+.row__summary {
+  margin-block-start: 0.4rem;
+  font-size: var(--fs-small);
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * 页脚。一条浅底的带子，左边一句话 + 一只小袋鼠，右边几个链接。
+ * ------------------------------------------------------------------------- */
+
+.foot {
+  margin-block-start: auto;
+  background: var(--surface);
+}
+
+.foot__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem 2rem;
+  padding-block: clamp(2rem, 4vw, 2.75rem);
+}
+
+.foot__left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: var(--fs-small);
+  color: var(--muted);
+}
+
+.foot__roo {
+  width: auto;
+  height: 3.25rem;
+  flex: none;
+}
+
+.foot__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.5rem;
+  font-size: var(--fs-small);
+  font-weight: 600;
+}
+
+.foot__nav a {
+  color: var(--muted);
+  transition: color 0.18s ease;
+}
+
+.foot__nav a:hover {
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * 语言切换：两枚挤在一个胶囊里的小按钮
+ * ------------------------------------------------------------------------- */
+
+.locales {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.45);
+  padding: 0.2rem;
+  margin-inline-start: 0.35rem;
+}
+
+.dark .locales,
+[data-theme='dark'] .locales {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.locales a {
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--muted);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.locales a:hover {
+  color: var(--ink);
+}
+
+.locales a[aria-current] {
+  background: var(--paper);
+  color: var(--ink);
+}

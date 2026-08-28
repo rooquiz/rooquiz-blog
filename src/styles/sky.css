@@ -1,0 +1,357 @@
+/*
+ * 英雄区 —— 一片天、一道彩虹拱、一只坐在拱下的袋鼠，底下三层云把天接回纸面。
+ *
+ * 整块东西在文档流里（不是固定定位），站点头就压在天最深的那一段上。
+ * 好处是全站不需要一行滚动监听：吸顶头一旦离开英雄区就得自己长出底色，
+ * 而那层底色什么时候出现只有 JS 知道。代价是页面头会随滚动离开，可以接受。
+ *
+ * 层序（z-index）：天(0) → 彩虹拱(1) → 云(2) → 袋鼠(3) → 内容(4)。
+ * 拱脚因此是插进云里而不是在半空中断掉；袋鼠坐在云前面。
+ * 内页那只反过来放在云后面（z-index 1），只探出头和耳朵。
+ */
+
+.sky {
+  position: relative;
+  /* 建独立层叠上下文，里面这套 z-index 不会和页面其它地方打架 */
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 46%, var(--sky-3) 100%);
+}
+
+.sky--tall {
+  min-height: var(--hero-h);
+}
+
+.sky--short {
+  min-height: var(--hero-h-sm);
+}
+
+/*
+ * 彩虹拱。
+ *
+ * 宽高一起限：先按宽度取值，再用 max-height 封顶。两条都生效时，SVG 的盒子会比
+ * 内容的固有比例矮，此时 preserveAspectRatio="xMidYMax meet" 会把拱整体缩小、
+ * 居中、贴着盒底放 —— 也就是矮屏上拱自动变小且仍然坐在云线上，
+ * 而不是被裁掉半个顶。这就是这里不用 background-image 的原因：
+ * background-size 给不出「等比缩小 + 底对齐」这个组合。
+ */
+.sky__arc {
+  position: absolute;
+  z-index: 1;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  inset-block-end: clamp(0.25rem, 1.2vw, 1rem);
+  width: min(48rem, 90vw);
+  height: auto;
+  max-height: 74%;
+}
+
+/*
+ * 袋鼠。外层只管定位（按高度定尺寸 —— 它得坐在云线上，宽度是多少无所谓），
+ * 里面那张 SVG 只管动效，两者分开的原因见 Sky.tsx 里的注释。
+ */
+.sky__roo {
+  position: absolute;
+  z-index: 3;
+  display: block;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  inset-block-end: clamp(1.75rem, 4vw, 3rem);
+  height: min(12.5rem, 22vw);
+}
+
+.sky__roo-art {
+  display: block;
+  width: auto;
+  height: 100%;
+}
+
+/*
+ * 内页那只：挪到右侧、缩小，坐在云线上。
+ *
+ * 曾经试过把它压到云层之下只露一个头（z-index 1），效果不稳：云的天际线是一串
+ * 圆丘，某个 x 上是峰、隔 100px 就是谷，而这只的横向位置是按视口百分比走的 ——
+ * 宽屏上正好埋进峰里，窄屏上就悬在谷的上方变成一颗飘着的头。
+ * 现在和首页那只一样压在云之上（继承 .sky__roo 的 z-index 3），落位只跟盒底有关，
+ * 与云的形状彻底解耦。窄屏收起 —— 那里它会和标题抢位置。
+ */
+.sky__roo--peek {
+  inset-inline-start: auto;
+  inset-inline-end: clamp(1rem, 7vw, 6rem);
+  translate: none;
+  inset-block-end: 0;
+  height: clamp(5rem, 10vw, 7.5rem);
+}
+
+@media (max-width: 47.99rem) {
+  .sky__roo--peek {
+    display: none;
+  }
+}
+
+/*
+ * 云。bottom: -1px 是为了盖住亚像素缝：SVG 的盒底与 .sky 的盒底在小数缩放下
+ * 会差半个像素，露出一条天色的细线，在白色正文上非常明显。
+ */
+.sky__clouds {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  inset-block-end: -1px;
+  width: 100%;
+  height: var(--cloud-h);
+  display: block;
+}
+
+.sky--tall {
+  --cloud-h: clamp(5rem, 11vw, 9rem);
+}
+
+.sky--short {
+  --cloud-h: clamp(4rem, 9vw, 7rem);
+}
+
+.sky__content {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+}
+
+/* 内页标题排在云上方的那段空里，所以底部要给云让出整整一个云高 */
+.sky--short .sky__content {
+  padding-block-end: var(--cloud-h);
+}
+
+/* ---------------------------------------------------------------------------
+ * 内页顶部的标题块
+ * ------------------------------------------------------------------------- */
+
+.sky__title {
+  margin-block-start: auto;
+  padding-block-start: clamp(1.5rem, 4vw, 3rem);
+}
+
+.sky__title .u-display {
+  margin-block-start: 0.7rem;
+  max-width: 22ch;
+}
+
+/*
+ * 天上的眉标走紫不走洋红。洋红 #e4008c 落在 --sky-2 这档蓝上对比度约 4.3:1，
+ * 而眉标是 13px 的小字（够不上 WCAG 的「大号文字」豁免），差一档不合格。
+ * 紫 #5b4bdb 在整条天空渐变上都在 5:1 以上，而且正好呼应彩虹的冷端。
+ * 纸面上的眉标不受这条约束，仍然是洋红。
+ */
+.u-eyebrow--sky {
+  color: var(--violet);
+}
+
+.sky__meta {
+  margin-block-start: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  color: var(--ink);
+  opacity: 0.72;
+}
+
+.sky__meta > * + *::before {
+  content: '·';
+  margin-inline-end: 1rem;
+  opacity: 0.5;
+}
+
+/* ---------------------------------------------------------------------------
+ * 站点头。留在天里，不吸顶。
+ * ------------------------------------------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  min-height: var(--head-h);
+  padding-block: 0.9rem;
+}
+
+.head__nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.9rem, 2.2vw, 2rem);
+  /* 导航贴着商标走，右侧那组图标才靠 margin-left:auto 推到边上 */
+  margin-inline-start: clamp(0.5rem, 3vw, 2.5rem);
+}
+
+.head__link {
+  font-weight: 500;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.head__link:hover {
+  background: rgb(255 255 255 / 0.45);
+}
+
+.dark .head__link:hover,
+[data-theme='dark'] .head__link:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+
+/** 当前栏目：洋红 + 一层浅底，比只变色更容易在这片蓝上被看见 */
+.head__link[aria-current] {
+  color: var(--accent);
+  background: rgb(255 255 255 / 0.55);
+}
+
+.dark .head__link[aria-current],
+[data-theme='dark'] .head__link[aria-current] {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.head__tools {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/** 右上角那组圆按钮：搜索 / 明暗 / RSS */
+.head__icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  color: var(--ink);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.head__icon:hover {
+  background: rgb(255 255 255 / 0.5);
+  color: var(--accent);
+}
+
+.dark .head__icon:hover,
+[data-theme='dark'] .head__icon:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.head__icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------------------------
+ * 文字商标：Roo · 袋鼠头 · Quiz + 洋红的 BLOG 小标
+ * ------------------------------------------------------------------------- */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1em;
+  font-size: clamp(1.25rem, 1.9vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.brand__word {
+  color: var(--ink);
+}
+
+.brand__word--alt {
+  color: var(--violet);
+}
+
+/*
+ * 袋鼠头夹在两个音节之间。它比字高一点点并往上提 —— 和字一样高的话
+ * 耳朵尖会顶在 x-height 上，看起来像掉下去了。
+ */
+.brand__mark {
+  width: auto;
+  height: 1.5em;
+  margin-block-start: -0.34em;
+  margin-inline: 0.06em;
+}
+
+.brand__tag {
+  margin-inline-start: 0.5em;
+  border-radius: 999px;
+  background: var(--accent);
+  padding: 0.25em 0.6em;
+  font-size: 0.52em;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+@media (max-width: 47.99rem) {
+  /* 窄屏上把小标收起来：商标本身已经占满一行，再挂一枚胶囊会把导航挤下去 */
+  .brand__tag {
+    display: none;
+  }
+}
+
+/*
+ * 明暗切换。两枚图标都渲染出来，由 data-theme 挑一枚显示 —— 原因见
+ * components/layout/theme.tsx 里的说明（当前主题服务端不可知，用 state 会闪）。
+ * 浅色时显示太阳（当前状态），深色时显示月亮。
+ */
+.theme-toggle__dark {
+  display: none;
+}
+
+[data-theme='dark'] .theme-toggle__light {
+  display: none;
+}
+
+[data-theme='dark'] .theme-toggle__dark {
+  display: block;
+}
+
+/*
+ * 窄屏站点头拆成两行：第一行商标 + 右侧那组工具，第二行整栏放导航。
+ * 挤在一行也塞得下（实测 390px 下不溢出），但商标、两个栏目、三枚图标和语言切换
+ * 之间只剩几个像素，读起来是一条密不透风的带子。换行后第一行有呼吸，
+ * 导航也拿到了完整的一行，点击目标不用再压缩。
+ */
+@media (max-width: 47.99rem) {
+  .head {
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+    padding-block: 0.75rem;
+  }
+
+  .head__nav {
+    /* order 把它推到第二行；width:100% 逼出换行点 */
+    order: 3;
+    width: 100%;
+    margin-inline-start: -0.7rem;
+    gap: 0.35rem;
+  }
+
+  .head__tools {
+    gap: 0.1rem;
+  }
+
+  .head__icon {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+}

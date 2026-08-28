@@ -5,7 +5,7 @@ import Link from 'next/link'
 import MiniSearch from 'minisearch'
 import type { Locale } from '@config'
 
-import { formatStamp } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 import { t } from '@/lib/i18n'
 
 interface SearchDoc {
@@ -64,6 +64,8 @@ export function SearchClient({ locale }: { locale: Locale }) {
     return engine.search(query).slice(0, 20)
   }, [engine, query])
 
+  const hasQuery = query.trim().length > 0
+
   return (
     <div>
       <input
@@ -76,30 +78,32 @@ export function SearchClient({ locale }: { locale: Locale }) {
         className="search__field"
       />
 
-      {query.trim().length > 0 && (
-        <>
-          {results.length === 0 ? (
-            <p className="page__empty">{copy.noResults}</p>
-          ) : (
-            <ul className="page__list">
-              {results.map(result => (
-                <li key={result.id} className="row">
-                  <Link href={`/${locale}/${result.id}`} className="row__link">
-                    <time className="u-micro row__stamp" dateTime={result.publishedAt as string}>
-                      {formatStamp(result.publishedAt as string, locale)}
-                    </time>
-                    <div className="row__main">
-                      <h2 className="u-title row__title">{result.title as string}</h2>
-                      <p className="row__summary">{result.summary as string}</p>
-                    </div>
-                    <span />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+      {/*
+       * 结果条数放在 aria-live 里播报。搜索是「边打字边换内容」的交互，
+       * 读屏器不会自动重读列表，不播报的话用户完全不知道结果变了。
+       */}
+      <p className="search__count" aria-live="polite">
+        {hasQuery ? copy.resultCount(results.length) : ''}
+      </p>
+
+      {hasQuery &&
+        (results.length === 0 ? (
+          <p className="page__empty">{copy.noResults}</p>
+        ) : (
+          <ul className="rows">
+            {results.map(result => (
+              <li key={result.id}>
+                <Link href={`/${locale}/${result.id}`} className="row__link">
+                  <p className="u-meta">
+                    <time dateTime={result.publishedAt as string}>{formatDate(result.publishedAt as string, locale)}</time>
+                  </p>
+                  <h2 className="row__title mt-1">{result.title as string}</h2>
+                  <p className="row__summary">{result.summary as string}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ))}
     </div>
   )
 }
