@@ -116,16 +116,28 @@
 }
 
 /*
- * 云带高度。参考量是 28.5rem（456px）—— 云几乎占满整个英雄区，
- * 上方只留一条平坦的天给导航。窄屏按视口收，否则一片云就把首屏吃光了。
+ * 云带高度**按英雄区高度取比例**，不要写成独立的 vw / rem。
+ *
+ * 两者各按各的单位涨过一版：宽屏上 26vw 一路涨到封顶的 456px，而 --hero-h 早就被
+ * 30rem 卡在 480 —— 云带于是占满整个英雄区，天际线顶到导航底下，彩虹拱和袋鼠
+ * 被整个埋掉。绑成比例之后，「天上留多少空、云占多少」在任何视口下都是同一个构图。
+ *
+ * 0.78 是照参考稿量的：最高的一道云脊落在英雄区高度的 35% 处，
+ * 白色层的谷底落在 94%（袋鼠的脚就踩在那儿）。
  */
 .sky--tall {
-  --cloud-h: clamp(9rem, 26vw, 28.5rem);
-  --hero-shift: min(14rem, 15.5vw);
+  --cloud-h: calc(var(--hero-h) * 0.78);
+/*
+   * 右移量。参考稿是**定值 331px**（一个 50rem 宽的居中盒子里，角色靠右端对齐），
+   * 不是百分比 —— 所以这里第一项写死 20.7rem。
+   * 第二项是护栏：拱门半宽约 20.5rem，`50vw - 25rem` 保证它的右缘不会顶出视口，
+   * 在 1024 这类中等宽度上会接管。
+   */
+  --hero-shift: min(20.7rem, calc(50vw - 25rem));
 }
 
 .sky--short {
-  --cloud-h: clamp(6rem, 14vw, 13rem);
+  --cloud-h: calc(var(--hero-h-sm) * 0.55);
   --hero-shift: 0px;
 }
 
@@ -133,7 +145,7 @@
  * 窄屏取消右移，拱门与袋鼠回到正中，并把拱放大。
  * 偏移是为宽屏的版面重心服务的（左边留给内容、右边放插画）；窄屏是单栏，
  * 没有那个重心可言，继续右移只会把拱门顶出视口右边。
- * 云的谷底在 x≈2800，居中后袋鼠落在 2560 —— 那一带同样是低处，仍然对得上。
+ * 云的谷底在 x≈2850，居中后袋鼠落在 2560 —— 那一带同样是低处，仍然对得上。
  *
  * 位置要紧：这条必须排在上面那两条 --hero-shift 之后。自定义属性没有特异度加成，
  * 同一个选择器下纯粹按源码顺序决胜，写在前面会被后面那条无条件的直接覆盖 ——
@@ -301,7 +313,7 @@
   align-items: center;
   gap: 0.1em;
   font-size: clamp(1.25rem, 1.9vw, 1.5rem);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.028em;
   line-height: 1;
   white-space: nowrap;
@@ -332,7 +344,7 @@
   background: var(--accent);
   padding: 0.25em 0.6em;
   font-size: 0.52em;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent-ink);

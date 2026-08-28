@@ -33,7 +33,7 @@ let fontCache: { bold: Buffer; medium: Buffer } | null = null
 async function loadFonts() {
   if (!fontCache) {
     const [bold, medium] = await Promise.all([
-      fs.readFile(path.join(FONT_DIR, 'figtree-800.ttf')),
+      fs.readFile(path.join(FONT_DIR, 'figtree-700.ttf')),
       fs.readFile(path.join(FONT_DIR, 'figtree-500.ttf')),
     ])
     fontCache = { bold, medium }
@@ -132,8 +132,8 @@ export async function renderOgImage({
 
         {/* 文字商标。Roo 墨色 / Quiz 紫 / BLOG 一枚洋红胶囊，和站内同一套 */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '52px 64px' }}>
-          <div style={{ display: 'flex', fontSize: 40, fontWeight: 800, color: INK }}>Roo</div>
-          <div style={{ display: 'flex', fontSize: 40, fontWeight: 800, color: VIOLET }}>Quiz</div>
+          <div style={{ display: 'flex', fontSize: 40, fontWeight: 700, color: INK }}>Roo</div>
+          <div style={{ display: 'flex', fontSize: 40, fontWeight: 700, color: VIOLET }}>Quiz</div>
           <div
             style={{
               display: 'flex',
@@ -142,7 +142,7 @@ export async function renderOgImage({
               background: ACCENT,
               padding: '6px 14px',
               fontSize: 19,
-              fontWeight: 800,
+              fontWeight: 700,
               letterSpacing: 2,
               color: PAPER,
             }}
@@ -166,7 +166,7 @@ export async function renderOgImage({
             style={{
               display: 'flex',
               fontSize: titleSize,
-              fontWeight: 800,
+              fontWeight: 700,
               lineHeight: 1.12,
               letterSpacing: -1.5,
               color: INK,
@@ -187,7 +187,7 @@ export async function renderOgImage({
             justifyContent: 'space-between',
             alignItems: 'center',
             fontSize: 21,
-            fontWeight: 800,
+            fontWeight: 700,
             letterSpacing: 1.5,
             color: MUTED,
           }}
@@ -200,7 +200,7 @@ export async function renderOgImage({
     {
       ...ogSize,
       fonts: [
-        { name: 'Figtree', data: fonts.bold, style: 'normal', weight: 800 },
+        { name: 'Figtree', data: fonts.bold, style: 'normal', weight: 700 },
         { name: 'Figtree', data: fonts.medium, style: 'normal', weight: 500 },
       ],
     },
