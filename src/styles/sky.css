@@ -19,7 +19,13 @@
   /* 建独立层叠上下文，里面这套 z-index 不会和页面其它地方打架 */
   isolation: isolate;
   overflow: hidden;
-  background: linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 46%, var(--sky-3) 100%);
+  /*
+   * 渐变必须在顶部四分之一之内走完，不能铺满整个英雄区。
+   * 云占掉了下面 85%，铺满的话实际露出来的只有最上面那一小段 ——
+   * 那一段里颜色几乎没变，天看上去是一块均匀的浅蓝，
+   * 浅色的云剪影贴上去就分不出层。压缩之后云线附近的天明显更深，云才浮得出来。
+   */
+  background: linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 11%, var(--sky-3) 24%);
 }
 
 .sky--tall {

@@ -15,15 +15,16 @@ import type { CSSProperties } from 'react'
  * 起伏天然是规整的：峰距差不多、峰高差不多，一眼就是纹样。要的是一条峰距在三四倍
  * 之间乱跳、相邻峰高能差一倍的曲线。
  *
- * 所以这里用三条**不可通约**周期的正弦叠加（1450 / 780 / 410），再乘一个落在袋鼠
- * 位置的高斯谷。周期不可通约是关键 —— 取成整数倍的话合成波会以最小公倍数为周期
- * 规律重复，又变回纹样。
+ * 所以这里用三条**不可通约**周期的正弦叠加，再乘一个落在袋鼠位置的高斯谷。
+ * 周期不可通约是关键 —— 取成整数倍的话合成波会以最小公倍数为周期规律重复，
+ * 又变回纹样。每一层有自己的一组周期，见 LAYERS 上方的说明。
  *
  * ── 渲染成一排交叠的圆帽 ──
  * 把曲线在横向 64 等分上采样，每段放一个圆帽，帽顶落在该段的高度上。
- * 半宽 CAP_W 远大于段宽（80），相邻帽子层层交叠，并集天然光滑 —— 比手写一串 A 弧
+ * 半宽 capW 远大于段宽（80），相邻帽子层层交叠，并集天然光滑 —— 比手写一串 A 弧
  * 好改得多，也不会在交界处留尖角（相切的两段圆弧一定有尖点，叠圆则不会）。
- * CAP_W 是唯一的手感旋钮：调大越圆滑、细节越少，调小越贴合、越容易起棱。
+ * capW 是每层的手感旋钮，取值跟着该层的波长走：调大越圆滑、细节越少，
+ * 调小越贴合、越容易起棱。
  *
  * ── 谷的位置和袋鼠绑定 ──
  * 高斯谷的中心 TROUGH_X 就是袋鼠所在（视口中心右侧 331px，换算到画布是 2560 + 331；
@@ -40,18 +41,21 @@ const VIEW_W = 5120
 const VIEW_H = 456
 const BINS = 64
 const BIN_W = VIEW_W / BINS
-/** 圆帽半宽。远大于段宽（80），保证处处交叠 */
-const CAP_W = 104
+/*
+ * 正弦和的增益。三条正弦极少同时到顶，所以合成波的实际峰值只有理论上限的六七成；
+ * 这两个数把它拉回 0…1 并轻微削顶，峰才吃得满 maxRise。
+ * 削顶还有个好处：顶被压平一点更像云，谷被压平则给出一段平缓的天际线。
+ */
+const GAIN_OFFSET = 0.62
+const GAIN_DIVISOR = 1.2
 
 /** 高斯谷的中心与宽度。中心 = 画布中点 + --hero-shift */
 const TROUGH_X = 2560 + 331
-const TROUGH_W = 700
+const TROUGH_W = 620
 /** 谷底把峰高压掉多少。不用压太狠 —— 拱门在云之前，不靠这道谷露出来 */
-const TROUGH_DEPTH = 0.72
+const TROUGH_DEPTH = 0.82
 
-/** 三条不可通约的周期与各自的权重 */
-const PERIODS = [1450, 780, 410]
-const WEIGHTS = [0.3, 0.15, 0.07]
+
 
 interface Layer {
   fill: string
@@ -59,27 +63,80 @@ interface Layer {
   base: number
   /** 最高的一座峰离地平线多高 */
   maxRise: number
-  /** 三条正弦各自的相位。三层各不相同，天际线才不会上下层平行 */
-  phases: [number, number, number]
+  /** 这一层的三条周期与权重 */
+  periods: [number, number, number]
+  weights: [number, number, number]
+  /** 相位。三层各不相同，天际线才不会上下层平行 */
+  phase: number
+  /** 圆帽半宽。约等于这一层一个云瓣的半宽 */
+  capW: number
   /** 动效：横向漂移的幅度（viewBox 单位 = px，因为横向 1:1）与一个来回的时长 */
   drift: number
   duration: string
 }
 
-/* 地平线依次下移、峰依次变矮 —— 远处的山头高而缓、近处的低而碎，才有纵深 */
+/*
+ * **三层的波长必须不同**，这是纵深的来源，也是最容易做错的一处。
+ *
+ * 远层是一串小圆丘（主波长 ≈ 380，1440 屏上看得到三四瓣）；
+ * 近层是一整片大形（主波长 ≈ 2400，一个周期就横跨整屏，只在袋鼠那儿沉下去）；
+ * 中层居中过渡。三层用同一组周期试过：要么全是小瓣、要么全是大缓坡，
+ * 怎么调都凑不出「远处碎、近处整」的层次。
+ *
+ * 地平线依次下移、峰依次变矮，配合波长的变化一起给出纵深。
+ */
 const LAYERS: Layer[] = [
-  { fill: 'var(--cloud-back)', base: 250, maxRise: 240, phases: [0.0, 1.1, 2.3], drift: 26, duration: '34s' },
-  { fill: 'var(--cloud-mid)', base: 320, maxRise: 250, phases: [2.4, 0.3, 4.1], drift: -18, duration: '26s' },
-  { fill: 'var(--paper)', base: 375, maxRise: 230, phases: [4.7, 3.2, 1.5], drift: 12, duration: '20s' },
+  {
+    fill: 'var(--cloud-back)',
+    base: 243,
+    maxRise: 244,
+    periods: [760, 380, 210],
+    weights: [0.16, 0.22, 0.08],
+    phase: 0.9,
+    capW: 140,
+    drift: 26,
+    duration: '34s',
+  },
+  {
+    fill: 'var(--cloud-mid)',
+    base: 324,
+    maxRise: 398,
+    periods: [1300, 620, 320],
+    weights: [0.2, 0.16, 0.06],
+    phase: 1.8,
+    capW: 190,
+    drift: -18,
+    duration: '26s',
+  },
+  {
+    fill: 'var(--paper)',
+    base: 371,
+    maxRise: 310,
+    periods: [2400, 1050, 520],
+    weights: [0.26, 0.13, 0.05],
+    phase: 2.36,
+    capW: 280,
+    drift: 12,
+    duration: '20s',
+  },
 ]
 
-/** 某一层在横坐标 x 处的峰高（0 … maxRise） */
+/**
+ * 某一层在横坐标 x 处的峰高（0 … maxRise）。
+ *
+ * 归一化那一步不能省，增益（GAIN_*）也不能随手给。三条正弦极少同时到顶，
+ * 峰值利用率只有六七成，而且**每层各不相同**（周期和相位不一样）——
+ * 直接调 maxRise 会一直追不上去，表面看是「云太矮」，其实是合成波没跑满量程。
+ * 三层的 base / maxRise 是按各自的利用率反解出来的，让天际线落在设定的区间里；
+ * 动了周期、相位或增益，这三对数就要重新解一次。
+ */
 function riseAt(layer: Layer, x: number): number {
-  let n = 0.5
-  for (let i = 0; i < PERIODS.length; i++) {
-    n += WEIGHTS[i] * Math.sin((2 * Math.PI * x) / PERIODS[i] + layer.phases[i])
+  const span = layer.weights[0] + layer.weights[1] + layer.weights[2]
+  let n = 0
+  for (let i = 0; i < layer.periods.length; i++) {
+    n += layer.weights[i] * Math.sin((2 * Math.PI * x) / layer.periods[i] + layer.phase * (i + 1))
   }
-  const wave = Math.min(1, Math.max(0, n))
+  const wave = Math.min(1, Math.max(0, (n + span * GAIN_OFFSET) / (span * GAIN_DIVISOR)))
 
   // 袋鼠脚下那一段压下去，给彩虹拱让出开阔的天
   const t = (x - TROUGH_X) / TROUGH_W
@@ -115,7 +172,7 @@ export function Clouds({ className }: { className?: string }) {
             const h = riseAt(layer, cx)
             // 已经贴着地平线的段不用画 —— h→0 时半径趋于无穷
             if (h < 3) return null
-            const { r, drop } = capCircle(CAP_W, h)
+            const { r, drop } = capCircle(layer.capW, h)
             return <circle key={i} cx={cx} cy={layer.base + drop} r={r} />
           })}
         </g>
