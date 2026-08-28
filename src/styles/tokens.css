@@ -62,7 +62,7 @@
   --shell: 74rem; /* 内容最大宽（含两侧栏） */
   --measure: 42rem; /* 正文单栏最大宽，约 68 字符 */
   --gutter: clamp(1.25rem, 4vw, 3rem);
-  --hero-h: clamp(21rem, 34vw, 30rem); /* 首页英雄区高度，拱门按它缩放 */
+  --hero-h: clamp(21rem, 37vw, 36rem); /* 首页英雄区高度，拱门与云按它缩放 */
   --hero-h-sm: clamp(13rem, 26vw, 20rem); /* 内页那条矮天 */
   --head-h: 4.5rem;
 
