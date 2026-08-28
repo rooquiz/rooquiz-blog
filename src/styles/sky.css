@@ -38,12 +38,13 @@
 .sky__arc {
   position: absolute;
   z-index: 1;
-  inset-inline-start: 50%;
+  /* 和袋鼠共用同一个右移量 —— 拱门要罩住它，两者必须一起偏 */
+  inset-inline-start: calc(50% + var(--hero-shift));
   translate: -50% 0;
   inset-block-end: clamp(0.25rem, 1.2vw, 1rem);
-  width: min(48rem, 90vw);
+  width: min(41rem, 46vw);
   height: auto;
-  max-height: 74%;
+  max-height: 68%;
 }
 
 /*
@@ -54,10 +55,10 @@
   position: absolute;
   z-index: 3;
   display: block;
-  inset-inline-start: 50%;
+  inset-inline-start: calc(50% + var(--hero-shift));
   translate: -50% 0;
-  inset-block-end: clamp(1.75rem, 4vw, 3rem);
-  height: min(12.5rem, 22vw);
+  inset-block-end: 1.5rem;
+  height: clamp(7.5rem, 14vw, 13rem);
 }
 
 .sky__roo-art {
@@ -89,26 +90,63 @@
   }
 }
 
+
 /*
- * 云。bottom: -1px 是为了盖住亚像素缝：SVG 的盒底与 .sky 的盒底在小数缩放下
- * 会差半个像素，露出一条天色的细线，在白色正文上非常明显。
+ * 云。
+ *
+ * **定宽**：viewBox 5120 宽，这里也给 5120px，横向 1:1 不缩放，居中放置，
+ * 两侧溢出交给 .sky 的 overflow: clip 裁掉。山丘的物理尺寸因此恒定
+ * （波长约 1200px），窄屏只是少看见几座 —— 详见 Clouds.tsx 的说明。
+ *
+ * 居中用负 margin 而不是 translate：translate 要留给入场动画（云从下方浮起），
+ * 同一个元素上两条 translate 会互相覆盖，云会在动画第一帧横向弹掉半个画布。
+ *
+ * bottom: -1px 盖住亚像素缝：SVG 的盒底与 .sky 的盒底在小数缩放下会差半个像素，
+ * 露出一条天色的细线，压在白色正文上非常明显。
  */
 .sky__clouds {
   position: absolute;
   z-index: 2;
-  inset-inline: 0;
+  inset-inline-start: 50%;
+  margin-inline-start: -2560px;
   inset-block-end: -1px;
-  width: 100%;
+  width: 5120px;
   height: var(--cloud-h);
   display: block;
 }
 
+/*
+ * 云带高度。参考量是 28.5rem（456px）—— 云几乎占满整个英雄区，
+ * 上方只留一条平坦的天给导航。窄屏按视口收，否则一片云就把首屏吃光了。
+ */
 .sky--tall {
-  --cloud-h: clamp(5rem, 11vw, 9rem);
+  --cloud-h: clamp(9rem, 26vw, 28.5rem);
+  --hero-shift: min(14rem, 15.5vw);
 }
 
 .sky--short {
-  --cloud-h: clamp(4rem, 9vw, 7rem);
+  --cloud-h: clamp(6rem, 14vw, 13rem);
+  --hero-shift: 0px;
+}
+
+/*
+ * 窄屏取消右移，拱门与袋鼠回到正中，并把拱放大。
+ * 偏移是为宽屏的版面重心服务的（左边留给内容、右边放插画）；窄屏是单栏，
+ * 没有那个重心可言，继续右移只会把拱门顶出视口右边。
+ * 云的谷底在 x≈2800，居中后袋鼠落在 2560 —— 那一带同样是低处，仍然对得上。
+ *
+ * 位置要紧：这条必须排在上面那两条 --hero-shift 之后。自定义属性没有特异度加成，
+ * 同一个选择器下纯粹按源码顺序决胜，写在前面会被后面那条无条件的直接覆盖 ——
+ * 踩过一次，表现是窄屏上媒体查询「明明匹配却不生效」。
+ */
+@media (max-width: 52rem) {
+  .sky--tall {
+    --hero-shift: 0px;
+  }
+
+  .sky__arc {
+    width: 82vw;
+  }
 }
 
 .sky__content {
