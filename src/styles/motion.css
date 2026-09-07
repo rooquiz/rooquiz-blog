@@ -4,7 +4,7 @@
  * 分三类：
  *   1. 入场   —— 页面加载时英雄区那套插画依次到位（云 → 彩虹由内向外绽开 → 袋鼠落下）
  *   2. 常驻   —— 云层横漂、袋鼠呼吸、彩虹的药丸沿弧缓慢流动
- *   3. 滚动揭示 —— 列表条目进入视口时淡入上浮，纯 CSS 滚动时间线，没有 JS
+ *   3. 微交互 —— 链接和工具按钮只在用户操作时反馈
  *
  * ── 无障碍 ──
  * 所有装饰性动画都关在 `prefers-reduced-motion: no-preference` 里，而**没有**用
@@ -84,27 +84,6 @@
     animation-direction: normal, reverse;
   }
 
-  /* -------------------------------------------------------------------------
-   * 3 · 滚动揭示
-   *
-   * 条目自己声明用 view() 时间线，进入视口的头一小段里淡入上浮。
-   * 加载时已经在视口内的条目，进度早已越过 range 终点，`both` 让它们直接落到
-   * 终态 —— 首屏不会有任何延迟出现的内容（首页头条正是 LCP 元素，不能让它淡入）。
-   * ---------------------------------------------------------------------- */
-
-  @supports (animation-timeline: view()) {
-    .feed__item,
-    .rows > li {
-      /* longhand + 显式 auto，原因见文件头 */
-      animation-name: reveal;
-      animation-duration: auto;
-      animation-timing-function: ease-out;
-      animation-fill-mode: both;
-      animation-timeline: view();
-      animation-range-start: entry 5%;
-      animation-range-end: cover 22%;
-    }
-  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -172,17 +151,6 @@
   }
   to {
     translate: calc(var(--drift) * 1px) 0;
-  }
-}
-
-@keyframes reveal {
-  from {
-    opacity: 0;
-    translate: 0 1.75rem;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
   }
 }
 

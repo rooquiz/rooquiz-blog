@@ -68,7 +68,7 @@ export default async function PagedIndexPage({ params }: { params: Promise<{ loc
       <main className="shell home">
         <div className="home__main">
           {/* 第 2 页起没有头条：「最新一篇」这个身份只属于第一页 */}
-          <PostFeed posts={slice} locale={locale} showLead={false} />
+          <PostFeed posts={slice} locale={locale} />
           <Pager locale={locale} current={current} total={totalPages} />
         </div>
 

@@ -1,165 +1,152 @@
 /**
- * Roo —— 站点吉祥物。一只坐着的袋鼠，穿黄色连帽衫，尾巴绕过右腿搭在地上。
- *
- * 造型上的几个取舍（它最小会缩到 40px，最大 400px，两端都得成立）：
- *
- * - **小臂露皮毛，不做长袖。** 黄底上再画黄袖子，无论怎么调明度都糊成一团躯干；
- *   棕色小臂横在黄色前襟上，缩到 40px 也还认得出是「抱在胸前的手」。
- * - **尾巴压在后腿之上、脚掌之下。** 全压在后面就只剩一截露在体外，读不出是尾巴；
- *   全压在前面又像一条搭在腿上的绳子。夹在中间才有「从身后绕出来」的层次。
- * - **耳朵是两个旋转的椭圆，不是路径。** 袋鼠的辨识度九成在耳朵和尾巴上，
- *   椭圆的轮廓在任何尺寸下都干净；手写贝塞尔在小尺寸会抖。
- * - **不画描边。** 整套设计没有一处描边，靠色块和渐变分层。
- *
- * 渐变 id 必须全局唯一 —— 同一页可能同时出现英雄区的大图和页脚的小图，
- * id 撞车的话后挂载的那份会把前一份的渐变抢走（SVG 的 id 是文档级的）。
- * 所以 idPrefix 是必填，调用处各给各的。
+ * Roo is drawn as a compact editorial mascot rather than an emoji-like animal.
+ * The bent ear, long counter-balancing tail, ink outline, and quiz card give it
+ * a recognisable silhouette from the hero down to the small footer signature.
  */
 export function Kangaroo({
   idPrefix,
   className,
-  /** 站点头 / 页脚那种小尺寸用：省掉腮红和眼里的高光，它们在 40px 下只是脏点 */
   simplified = false,
 }: {
   idPrefix: string
   className?: string
   simplified?: boolean
 }) {
-  const id = (name: string) => `${idPrefix}-${name}`
-  const fill = (name: string) => `url(#${id(name)})`
+  const fur = `${idPrefix}-fur`
 
   return (
-    <svg className={className} viewBox="0 0 380 420" fill="none" aria-hidden>
+    <svg className={className} viewBox="0 0 380 430" fill="none" aria-hidden>
       <defs>
-        <linearGradient id={id('fur')} x1="0.2" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stopColor="#E5B078" />
-          <stop offset="1" stopColor="#BC7F45" />
-        </linearGradient>
-        <linearGradient id={id('tail')} x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0" stopColor="#D49C5F" />
-          <stop offset="1" stopColor="#A87038" />
-        </linearGradient>
-        <linearGradient id={id('haunch')} x1="0.15" y1="0" x2="0.9" y2="1">
-          <stop offset="0" stopColor="#B27B44" />
-          <stop offset="1" stopColor="#8A5A2C" />
-        </linearGradient>
-        <linearGradient id={id('hoodie')} x1="0.25" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#FFD860" />
-          <stop offset="1" stopColor="#F0A81C" />
-        </linearGradient>
-        <linearGradient id={id('cream')} x1="0.3" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#FCEEDA" />
-          <stop offset="1" stopColor="#EBD3B0" />
+        <linearGradient id={fur} x1="116" y1="54" x2="278" y2="366" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#F3A45E" />
+          <stop offset="1" stopColor="#C9693F" />
         </linearGradient>
       </defs>
 
-      {/* 地面投影。压得很扁 —— 光源在正上方偏前 */}
-      <ellipse cx="190" cy="390" rx="140" ry="15" fill="#1c3b50" opacity="0.15" />
+      <ellipse cx="194" cy="399" rx="143" ry="16" fill="#25213F" opacity="0.13" />
 
-      {/* 耳朵。外耳皮毛、内耳奶白，都朝外倾 22° */}
-      <ellipse cx="140" cy="48" rx="23" ry="44" transform="rotate(-22 140 48)" fill={fill('fur')} />
-      <ellipse cx="142" cy="52" rx="12" ry="30" transform="rotate(-22 142 52)" fill={fill('cream')} />
-      <ellipse cx="240" cy="48" rx="23" ry="44" transform="rotate(22 240 48)" fill={fill('fur')} />
-      <ellipse cx="238" cy="52" rx="12" ry="30" transform="rotate(22 238 52)" fill={fill('cream')} />
-
-      {/* 尾巴：自身后甩出，绕过右腿落到地上，末端回勾 */}
+      {/* The tail leads the eye back into the rainbow and keeps the seated pose lively. */}
       <path
-        fill={fill('tail')}
-        d="M228 282 C296 276 354 310 368 352 C376 376 363 397 341 397 C326 397 319 384 328 373 C339 354 326 337 302 325 C280 314 252 312 226 326 Z"
+        d="M246 277c48 6 88 35 103 69 10 24 2 46-21 51-18 4-35-4-39-18 17 1 30-4 33-15 4-15-18-37-53-47-13-4-26-4-39-2l16-38Z"
+        fill="#B95B3A"
+        stroke="#2B2845"
+        strokeWidth="7"
+        strokeLinejoin="round"
       />
+      <path d="M317 362c13 1 25-4 30-14 7 15 3 31-12 39-12 7-28 6-38-2 11-3 18-11 20-23Z" fill="#FFE0B3" />
 
-      {/* 后腿。比躯干深一档，坐姿里它们是最背光的一块 */}
-      <ellipse cx="118" cy="316" rx="48" ry="36" transform="rotate(-16 118 316)" fill={fill('haunch')} />
-      <ellipse cx="262" cy="316" rx="48" ry="36" transform="rotate(16 262 316)" fill={fill('haunch')} />
+      <path
+        d="M151 309c-34-2-67 18-82 50-8 17 2 31 20 30l79-7 18-67-35-6Z"
+        fill="#B95B3A"
+        stroke="#2B2845"
+        strokeWidth="7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M226 312c31 0 56 17 66 43 7 18-4 31-23 29l-66-8-12-60 35-4Z"
+        fill="#CA7044"
+        stroke="#2B2845"
+        strokeWidth="7"
+        strokeLinejoin="round"
+      />
+      <path d="M67 365c-9 16 1 27 20 25l70-7-2-24-88 6Z" fill="#FFE0B3" />
+      <path d="M219 358l-6 20 55 7c19 2 29-8 25-25l-74-2Z" fill="#FFE0B3" />
 
-      {/* 脚掌。袋鼠脚很长，这里两只都朝外岔开 6° */}
-      <g fill={fill('fur')}>
-        <rect x="38" y="342" width="132" height="48" rx="24" transform="rotate(-6 104 366)" />
-        <rect x="210" y="342" width="132" height="48" rx="24" transform="rotate(6 276 366)" />
+      <path
+        d="M190 177c-48 0-80 39-79 101 1 65 27 94 79 94s78-29 79-94c1-62-31-101-79-101Z"
+        fill={`url(#${fur})`}
+        stroke="#2B2845"
+        strokeWidth="7"
+      />
+      <path
+        d="M120 230c10-34 34-53 70-53s60 19 70 53l-8 79H128l-8-79Z"
+        fill="#6654D9"
+        stroke="#2B2845"
+        strokeWidth="7"
+        strokeLinejoin="round"
+      />
+      <path d="M145 213c22 16 68 16 90 0" stroke="#A99BFF" strokeWidth="8" strokeLinecap="round" />
+      <path d="M190 229v62" stroke="#4B3CAE" strokeWidth="5" strokeLinecap="round" />
+
+      <path d="M132 242c-13 19-14 50 12 68" stroke={`url(#${fur})`} strokeWidth="27" strokeLinecap="round" />
+      <path d="M248 242c13 19 14 50-12 68" stroke={`url(#${fur})`} strokeWidth="27" strokeLinecap="round" />
+
+      <g transform="rotate(-2 190 318)">
+        <rect x="139" y="278" width="102" height="80" rx="10" fill="#FFFDF8" stroke="#2B2845" strokeWidth="7" />
+        {!simplified && (
+          <>
+            <circle cx="161" cy="300" r="6" fill="#FF3D84" />
+            <path d="m157 300 3 3 6-7" stroke="#FFFDF8" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M177 300h43M160 321h60M160 340h39" stroke="#CBC6E9" strokeWidth="6" strokeLinecap="round" />
+          </>
+        )}
       </g>
+      <circle cx="148" cy="304" r="14" fill="#E58A51" stroke="#2B2845" strokeWidth="6" />
+      <circle cx="232" cy="304" r="14" fill="#D57647" stroke="#2B2845" strokeWidth="6" />
 
-      {/* 连帽衫躯干 */}
       <path
-        fill={fill('hoodie')}
-        d="M190 182 C230 182 254 200 258 234 C264 272 270 306 268 322 C266 340 240 350 190 350 C140 350 114 340 112 322 C110 306 116 272 122 234 C126 200 150 182 190 182 Z"
+        d="M149 86c-19-27-26-59-9-69 17-10 34 21 38 55l-29 14Z"
+        fill={`url(#${fur})`}
+        stroke="#2B2845"
+        strokeWidth="7"
+        strokeLinejoin="round"
       />
-      {/* 前袋。袋鼠育儿袋的双关，也是躯干上唯一的分色，缺了它前襟是一整片黄 */}
+      <path d="M151 68c-8-17-11-34-5-39 7-4 16 14 20 34l-15 5Z" fill="#FFB1B9" />
       <path
-        fill="#E09708"
-        d="M144 300 C144 293 148 289 155 289 L225 289 C232 289 236 293 236 300 L238 330 C239 339 234 345 225 345 L155 345 C146 345 141 339 142 330 Z"
+        d="M220 75c7-29 25-50 43-43 11 5 10 21 1 35 13-3 22 5 18 16-6 17-35 20-61 17l-1-25Z"
+        fill={`url(#${fur})`}
+        stroke="#2B2845"
+        strokeWidth="7"
+        strokeLinejoin="round"
       />
+      <path d="M238 75c7-17 17-29 24-27 6 3 2 15-9 27 8-2 14 1 13 6-2 7-16 9-30 8l2-14Z" fill="#FFB1B9" />
 
-      {/* 小臂 + 交握的手。起点刻意落在躯干轮廓之内，看起来是从袖口伸出来的 */}
-      <g stroke={fill('fur')} strokeWidth="22" strokeLinecap="round">
-        <path d="M140 244 Q130 284 172 304" />
-        <path d="M240 244 Q250 284 208 304" />
-      </g>
-      <circle cx="177" cy="306" r="15" fill={fill('fur')} />
-      <circle cx="203" cy="306" r="15" fill={fill('fur')} />
-
-      {/* 领口。一道深黄的弧，把下巴和躯干分开 */}
-      <path d="M152 198 Q190 218 228 198" stroke="#DE9406" strokeWidth="9" strokeLinecap="round" />
-
-      {/* 头。上半是圆颅，下半收成口鼻 */}
       <path
-        fill={fill('fur')}
-        d="M190 46 C227 46 254 73 254 108 C254 127 248 142 237 152 C228 161 220 172 216 183 C212 194 202 200 190 200 C178 200 168 194 164 183 C160 172 152 161 143 152 C132 142 126 127 126 108 C126 73 153 46 190 46 Z"
+        d="M190 57c-44 0-76 31-76 74 0 27 13 48 33 61 10 7 19 17 23 28 4 12 35 12 40 0 4-11 13-21 23-28 20-13 33-34 33-61 0-43-32-74-76-74Z"
+        fill={`url(#${fur})`}
+        stroke="#2B2845"
+        strokeWidth="7"
       />
-      <ellipse cx="190" cy="170" rx="34" ry="26" fill={fill('cream')} />
+      <path d="M137 125c11-18 31-27 53-27s42 9 53 27c4 7 5 17 2 26-8 25-28 42-55 42s-47-17-55-42c-3-9-2-19 2-26Z" fill="#F7C890" />
+
+      <path d="M145 113c8-8 19-10 29-5" stroke="#2B2845" strokeWidth="6" strokeLinecap="round" />
+      <path d="M206 108c10-5 21-3 29 5" stroke="#2B2845" strokeWidth="6" strokeLinecap="round" />
+      <ellipse cx="162" cy="128" rx="7" ry="9" fill="#2B2845" />
+      <ellipse cx="218" cy="128" rx="7" ry="9" fill="#2B2845" />
       {!simplified && (
         <>
-          <ellipse cx="145" cy="147" rx="16" ry="9.5" fill="#F2748F" opacity="0.45" />
-          <ellipse cx="235" cy="147" rx="16" ry="9.5" fill="#F2748F" opacity="0.45" />
+          <circle cx="160" cy="125" r="2" fill="white" />
+          <circle cx="216" cy="125" r="2" fill="white" />
+          <circle cx="143" cy="153" r="7" fill="#EF7C7E" opacity="0.55" />
+          <circle cx="237" cy="153" r="7" fill="#EF7C7E" opacity="0.55" />
         </>
       )}
-      <ellipse cx="190" cy="152" rx="13.5" ry="10.5" fill="#3B2C28" />
-      <ellipse cx="161" cy="118" rx="10.5" ry="12.5" fill="#2A2436" />
-      <ellipse cx="219" cy="118" rx="10.5" ry="12.5" fill="#2A2436" />
-      {!simplified && (
-        <>
-          <circle cx="157" cy="112.5" r="3.6" fill="#fff" />
-          <circle cx="215" cy="112.5" r="3.6" fill="#fff" />
-        </>
-      )}
+      <path d="M177 151c2-10 24-10 26 0 1 7-5 14-13 14s-14-7-13-14Z" fill="#2B2845" />
+      <path d="M190 165c0 8 7 12 15 9" stroke="#2B2845" strokeWidth="4" strokeLinecap="round" />
     </svg>
   )
 }
 
-/**
- * 只有头的版本 —— 商标里那个夹在 Roo 与 Quiz 之间的小标记，以及无封面时的兜底砖。
- * 不是把整只袋鼠裁一刀：全身图缩到 24px 时耳朵只剩两个像素，得单独排一版把耳朵放大。
- */
 export function RooMark({ idPrefix, className }: { idPrefix: string; className?: string }) {
-  const id = (name: string) => `${idPrefix}-${name}`
-  const fill = (name: string) => `url(#${id(name)})`
+  const fur = `${idPrefix}-fur`
 
   return (
-    <svg className={className} viewBox="0 0 140 150" fill="none" aria-hidden>
+    <svg className={className} viewBox="0 0 150 158" fill="none" aria-hidden>
       <defs>
-        <linearGradient id={id('fur')} x1="0.2" y1="0" x2="0.85" y2="1">
-          <stop offset="0" stopColor="#E5B078" />
-          <stop offset="1" stopColor="#BC7F45" />
-        </linearGradient>
-        <linearGradient id={id('cream')} x1="0.3" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#FCEEDA" />
-          <stop offset="1" stopColor="#EBD3B0" />
+        <linearGradient id={fur} x1="35" y1="14" x2="112" y2="144" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#F3A45E" />
+          <stop offset="1" stopColor="#C9693F" />
         </linearGradient>
       </defs>
-
-      {/* 耳朵比全身图那版更长更立，小尺寸下靠它们撑起「这是袋鼠」 */}
-      <ellipse cx="34" cy="40" rx="17" ry="37" transform="rotate(-20 34 40)" fill={fill('fur')} />
-      <ellipse cx="36" cy="44" rx="8.5" ry="24" transform="rotate(-20 36 44)" fill={fill('cream')} />
-      <ellipse cx="106" cy="40" rx="17" ry="37" transform="rotate(20 106 40)" fill={fill('fur')} />
-      <ellipse cx="104" cy="44" rx="8.5" ry="24" transform="rotate(20 104 44)" fill={fill('cream')} />
-
-      <path
-        fill={fill('fur')}
-        d="M70 38 C97 38 117 58 117 84 C117 98 112 110 104 117 C97 124 91 132 88 140 C85 148 78 152 70 152 C62 152 55 148 52 140 C49 132 43 124 36 117 C28 110 23 98 23 84 C23 58 43 38 70 38 Z"
-      />
-      <ellipse cx="70" cy="120" rx="25" ry="19" fill={fill('cream')} />
-      <ellipse cx="70" cy="106" rx="10" ry="7.5" fill="#3B2C28" />
-      <ellipse cx="48" cy="81" rx="7.5" ry="9" fill="#2A2436" />
-      <ellipse cx="92" cy="81" rx="7.5" ry="9" fill="#2A2436" />
+      <path d="M44 58C28 34 25 10 38 6c13-4 24 20 27 43L44 58Z" fill={`url(#${fur})`} stroke="#2B2845" strokeWidth="6" strokeLinejoin="round" />
+      <path d="M49 46c-6-13-7-24-3-26 5-2 10 11 12 23l-9 3Z" fill="#FFB1B9" />
+      <path d="M93 48c7-23 21-36 33-29 8 5 4 16-4 25 9-1 15 5 11 13-6 12-24 11-42 8l2-17Z" fill={`url(#${fur})`} stroke="#2B2845" strokeWidth="6" strokeLinejoin="round" />
+      <path d="M75 42c-34 0-58 24-58 58 0 22 11 40 28 50 9 5 51 5 60 0 17-10 28-28 28-50 0-34-24-58-58-58Z" fill={`url(#${fur})`} stroke="#2B2845" strokeWidth="6" />
+      <path d="M36 96c8-14 23-21 39-21s31 7 39 21c10 18-8 44-39 44S26 114 36 96Z" fill="#F7C890" />
+      <ellipse cx="55" cy="96" rx="6" ry="8" fill="#2B2845" />
+      <ellipse cx="95" cy="96" rx="6" ry="8" fill="#2B2845" />
+      <path d="M65 114c2-9 18-9 20 0 1 6-4 11-10 11s-11-5-10-11Z" fill="#2B2845" />
+      <path d="M75 125c0 6 5 9 11 7" stroke="#2B2845" strokeWidth="3.5" strokeLinecap="round" />
     </svg>
   )
 }

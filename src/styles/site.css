@@ -43,8 +43,11 @@ a.card:hover {
 
 .home {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 17rem;
-  gap: clamp(2rem, 5vw, 4.5rem);
+  grid-template-columns: minmax(0, 1fr) 19.5rem;
+  gap: 2rem;
+  position: relative;
+  z-index: 5;
+  margin-block-start: -7rem;
   padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3rem, 8vw, 6rem);
 }
 
@@ -52,12 +55,17 @@ a.card:hover {
   /* 边栏落到正文之后。分类是二级信息，不该在小屏上挡在文章前面 */
   .home {
     grid-template-columns: minmax(0, 1fr);
+    margin-block-start: 0;
   }
 }
 
 /* 页面 h1（那行洋红眉标）与文章流之间的距离 */
 .home__eyebrow {
   margin-block-end: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+.home__main {
+  min-width: 0;
 }
 
 .home__side {
@@ -88,7 +96,7 @@ a.card:hover {
 
 /** 边栏里的小卡片（订阅、关于） */
 .side__card {
-  border-radius: var(--radius);
+  border-radius: 0.5rem;
   background: var(--surface);
   padding: 1.1rem 1.2rem;
 }
@@ -116,8 +124,7 @@ a.card:hover {
 /* ---------------------------------------------------------------------------
  * 文章列表
  *
- * 第一篇铺一张宽封面，其余走「缩略图 + 文字」的横条。
- * 差别是刻意的：一屏之内只该有一个视觉重心，十篇都铺大图等于没有重心。
+ * 索引页像一份编辑目录：不重复文章页封面，所有条目保持同一种紧凑节奏。
  * ------------------------------------------------------------------------- */
 
 .feed {
@@ -126,85 +133,16 @@ a.card:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: clamp(2.25rem, 4.5vw, 3.25rem);
+  gap: 2.4rem;
 }
 
 .feed__item {
-  display: grid;
-  grid-template-columns: 11.5rem minmax(0, 1fr);
-  gap: clamp(1rem, 2.5vw, 1.75rem);
-  align-items: start;
-}
-
-/** 头条：封面拉满，文字排在它下面 */
-.feed__item--lead {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
-}
-
-@media (max-width: 39.99rem) {
-  .feed__item {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.feed__cover {
-  position: relative;
   display: block;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--surface);
-  aspect-ratio: 4 / 3;
-  box-shadow: var(--lift);
-  transition:
-    box-shadow 0.22s ease,
-    translate 0.22s ease;
-}
-
-.feed__item--lead .feed__cover {
-  aspect-ratio: 3 / 2;
-}
-
-.feed__cover:hover {
-  box-shadow: var(--lift-hover);
-  translate: 0 -2px;
-}
-
-.feed__cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: scale 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.feed__cover:hover img {
-  scale: 1.04;
-}
-
-/*
- * 无封面时的兜底：淡蓝底 + 一只小袋鼠。
- * 不留白格 —— 列表靠图建立节奏，缺一张就会在那一行塌下去。
- */
-.feed__fallback {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(150deg, var(--chip), var(--surface));
-}
-
-.feed__fallback svg {
-  width: auto;
-  height: 58%;
-  opacity: 0.85;
+  max-width: 44rem;
 }
 
 .feed__title {
-  margin-block-start: 0.5rem;
-}
-
-.feed__item--lead .feed__title {
-  font-size: clamp(1.625rem, 3vw, 2.25rem);
+  margin: 0;
 }
 
 .feed__title a {
@@ -217,18 +155,13 @@ a.card:hover {
 }
 
 .feed__summary {
-  margin-block-start: 0.7rem;
+  margin-block-start: 0.55rem;
   color: var(--muted);
-  line-height: 1.6;
-  /* 摘要在列表里最多给四行，长摘要会把下一篇顶出首屏 */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  overflow: hidden;
+  line-height: 1.58;
 }
 
 .feed__foot {
-  margin-block-start: 1rem;
+  margin-block-start: 0.75rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -240,6 +173,7 @@ a.card:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  margin-block-start: 0.35rem;
 }
 
 .feed__meta > * + *::before {
@@ -264,7 +198,7 @@ a.card:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  border-radius: 999px;
+  border-radius: 0.45rem;
   background: var(--chip);
   padding: 0.55rem 1.1rem;
   font-size: var(--fs-small);

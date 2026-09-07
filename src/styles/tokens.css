@@ -30,15 +30,15 @@
   /* ---- 内容区 ---- */
   --paper: #ffffff;
   --surface: #f4f8fb; /* 卡片、代码块、无封面兜底砖 */
-  --ink: #21203a; /* 近黑但偏靛，纯黑在这套浅蓝里太硬 */
-  --muted: #64627f;
+  --ink: #29273f; /* 近黑但偏靛，纯黑在这套浅蓝里太硬 */
+  --muted: #67647a;
   /* 品牌洋红。眉标、链接、强调都走它 */
-  --accent: #e4008c;
+  --accent: #e60067;
   --accent-ink: #ffffff;
   /* 次级强调：商标后半段、目录当前项、彩虹拱的冷端 */
-  --violet: #5b4bdb;
+  --violet: #5848d7;
   /* 分类胶囊 */
-  --chip: #d5ecf9;
+  --chip: #d8eef8;
   --chip-ink: #1c3b50;
   --chip-hover: #bfe2f6;
   --rule: rgb(33 32 58 / 0.1);
@@ -59,18 +59,18 @@
   --arc-7: #3639ad;
 
   /* ---- 几何 ---- */
-  --shell: 74rem; /* 内容最大宽（含两侧栏） */
+  --shell: 68rem; /* 内容最大宽（含两侧栏） */
   --measure: 42rem; /* 正文单栏最大宽，约 68 字符 */
-  --gutter: clamp(1.25rem, 4vw, 3rem);
-  --hero-h: clamp(21rem, 37vw, 36rem); /* 首页英雄区高度，拱门与云按它缩放 */
+  --gutter: clamp(1.25rem, 3vw, 2rem);
+  --hero-h: 32rem; /* 首页英雄区高度，对齐宽屏参考稿 */
   --hero-h-sm: clamp(13rem, 26vw, 20rem); /* 内页那条矮天 */
   --head-h: 4.5rem;
 
   /* ---- 字号 ---- */
-  --fs-display: clamp(2rem, 4.4vw, 3.25rem); /* 文章页 h1 */
-  --fs-h2: clamp(1.375rem, 2.4vw, 1.875rem); /* 列表里的文章标题 */
-  --fs-h3: clamp(1.125rem, 1.5vw, 1.3125rem);
-  --fs-body: clamp(1.0625rem, 0.42vw + 0.95rem, 1.1875rem);
+  --fs-display: 3rem; /* 文章页 h1 */
+  --fs-h2: 1.375rem; /* 列表里的文章标题 */
+  --fs-h3: 1.1875rem;
+  --fs-body: 1rem;
   --fs-small: 0.9375rem;
   --fs-eyebrow: 0.8125rem;
   --lh-body: 1.68;
@@ -81,7 +81,15 @@
   --border: var(--rule);
   --separator: var(--rule);
   --link: var(--accent);
-  --radius: 0.875rem;
+  --radius: 0.5rem;
+}
+
+@media (max-width: 47.99rem) {
+  :root {
+    --hero-h: 21rem;
+    --fs-display: 2.25rem;
+    --fs-h2: 1.25rem;
+  }
 }
 
 /*

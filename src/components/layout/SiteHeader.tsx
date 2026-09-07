@@ -63,7 +63,7 @@ export function SiteHeader({
           <SearchIcon />
         </Link>
         <ThemeToggle label={copy.toggleTheme} />
-        <Link href={localePath(locale, 'feed.xml')} className="head__icon" aria-label={copy.rss}>
+        <Link href={localePath(locale, 'feed.xml')} className="head__icon head__rss" aria-label={copy.rss}>
           <RssIcon />
         </Link>
         <LocaleSwitcher current={locale} hrefs={localeHrefs} />

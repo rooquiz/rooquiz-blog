@@ -126,7 +126,7 @@ body > main {
   font-size: var(--fs-display);
   font-weight: 700;
   line-height: 1.08;
-  letter-spacing: -0.022em;
+  letter-spacing: 0;
   color: var(--ink);
   text-wrap: balance;
 }
@@ -136,7 +136,7 @@ body > main {
   font-size: var(--fs-h2);
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.018em;
+  letter-spacing: 0;
   color: var(--ink);
   text-wrap: balance;
 }
@@ -176,7 +176,7 @@ body > main {
   display: inline-flex;
   align-items: center;
   gap: 0.45em;
-  border-radius: 999px;
+  border-radius: 0.45rem;
   background: var(--chip);
   padding: 0.4em 0.9em;
   font-size: var(--fs-small);
