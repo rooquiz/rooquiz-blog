@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { clsx } from 'clsx'
 import type { Locale } from '@config'
 
 import { localePath, type PostMeta } from '@/lib/content'
@@ -15,9 +16,12 @@ import { ArrowRightIcon } from '@/components/layout/Icons'
 export function PostFeed({
   posts,
   locale,
+  className,
 }: {
   posts: PostMeta[]
   locale: Locale
+  /** 首页用它给头条与文章流之间加一段间距，见 site.css 的 .home__rest */
+  className?: string
 }) {
   const copy = t(locale)
 
@@ -26,7 +30,7 @@ export function PostFeed({
   }
 
   return (
-    <ol className="feed">
+    <ol className={clsx('feed', className)}>
       {posts.map(post => (
         <FeedItem key={post.slug} post={post} locale={locale} />
       ))}

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { clsx } from 'clsx'
 import { LOCALES, site, type Locale } from '@config'
 
 import {
@@ -114,7 +115,7 @@ export default async function PostPage({ params }: { params: Promise<{ locale: s
            * 眉标用首个标签而不是固定的「文章」：读者从列表点进来已经知道这是文章，
            * 更有用的信息是「这篇属于哪一类」。没有标签才退回栏目名。
            */}
-          <p className="u-eyebrow u-eyebrow--sky">{post.tags[0] ?? copy.journal}</p>
+          <p className="u-eyebrow">{post.tags[0] ?? copy.journal}</p>
 
           <h1 className="u-display">{post.title}</h1>
 
@@ -198,7 +199,8 @@ function Neighbour({
     <Link
       href={localePath(locale, post.slug)}
       rel={direction === 'prev' ? 'prev' : 'next'}
-      className={`card article__neighbour${direction === 'next' ? ' article__neighbour--next' : ''}`}
+      /* 同 SiteFrame：类名走 clsx，模板字符串里的前导空格会被 prettier 的 tailwind 插件吃掉 */
+      className={clsx('card article__neighbour', direction === 'next' && 'article__neighbour--next')}
     >
       <span className="u-eyebrow">
         {direction === 'prev' ? '← ' : ''}

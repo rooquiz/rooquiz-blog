@@ -60,7 +60,7 @@ export default async function TagArchivePage({ params }: { params: Promise<{ loc
       section="tags"
       hero={
         <>
-          <p className="u-eyebrow u-eyebrow--sky">{copy.categories}</p>
+          <p className="u-eyebrow">{copy.categories}</p>
           <h1 className="u-display">{decoded}</h1>
           <p className="u-meta sky__meta">{copy.resultCount(posts.length)}</p>
         </>

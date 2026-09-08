@@ -4,7 +4,7 @@
  * 一条贯穿的规矩：这里没有任何直角，也几乎没有分隔线。
  * 版面靠留白和圆角色块分组 —— 英雄区已经很热闹了，正文区再加边框会显得脏。
  * 需要「这是一块」的地方用 .card（圆角 + 极浅的投影），
- * 需要「这是一组的开头」的地方用 .u-eyebrow（洋红小字），仅此两种。
+ * 需要「这是一组的开头」的地方用 .u-eyebrow（紫色小字），仅此两种。
  */
 
 /* ---------------------------------------------------------------------------
@@ -38,51 +38,166 @@ a.card:hover {
 }
 
 /* ---------------------------------------------------------------------------
- * 首页：正文栏 + 右侧边栏
+ * 首页 / 分页页：正文栏 + 右侧边栏
+ *
+ * 三个格子、两列两行：
+ *
+ *     +-------------------+-------+
+ *     |                   |  roo  |   ← 袋鼠，压在天里
+ *     |       main        +-------+
+ *     |                   |  side |   ← 分类 / 订阅 / 关于
+ *     +-------------------+-------+
+ *
+ * 袋鼠单独占一格而不是塞进 side 里，是为了窄屏：塌成单栏后
+ * grid-template-areas 直接把它排到最前面（roo → main → side），
+ * 而留在 side 里的话它会跟着分类掉到文章流后面 —— 而它是第一屏的主角。
+ * 分页页没有袋鼠，roo 那一格自然塌成 0 高，另外两格照旧。
  * ------------------------------------------------------------------------- */
 
 .home {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 19.5rem;
-  gap: 2rem;
-  position: relative;
-  z-index: 5;
-  margin-block-start: -7rem;
-  padding-block: clamp(2.5rem, 6vw, 4.5rem) clamp(3rem, 8vw, 6rem);
-}
-
-@media (max-width: 61.99rem) {
-  /* 边栏落到正文之后。分类是二级信息，不该在小屏上挡在文章前面 */
-  .home {
-    grid-template-columns: minmax(0, 1fr);
-    margin-block-start: 0;
-  }
-}
-
-/* 页面 h1（那行洋红眉标）与文章流之间的距离 */
-.home__eyebrow {
-  margin-block-end: clamp(1.25rem, 2.5vw, 1.75rem);
+  grid-template-columns: minmax(0, 1fr) var(--rail);
+  /*
+   * 第二行吃掉剩余高度。不写这条的话 side 那一格的高度就等于它自己的内容高，
+   * 里面 position:sticky 的边栏没有可滚动的余量，吸附等于失效。
+   */
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    'main roo'
+    'main side';
+  gap: 0 clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+  padding-block: clamp(2.5rem, 6vw, 4rem) clamp(3rem, 8vw, 6rem);
 }
 
 .home__main {
+  grid-area: main;
   min-width: 0;
 }
 
+.home__perch {
+  grid-area: roo;
+}
+
 .home__side {
+  grid-area: side;
   display: flex;
   flex-direction: column;
   gap: clamp(2rem, 4vw, 2.75rem);
   /* 边栏比正文短得多，跟着滚一段再停 */
   position: sticky;
   inset-block-start: 1.5rem;
-  align-self: start;
+}
+
+/*
+ * 首页的两栏各自再排一段上边距，把内容摆进那片天里的对位上：
+ * 左栏的眉标要落在天的下半段（标题下面还得剩两三行的天），
+ * 右栏的袋鼠要露在天的上半段（耳朵尖离导航一个身位）。
+ * 这两个值只对首页成立 —— 分页页的天只有一半高，照这个排会把标题推到纸面上。
+ */
+.frame--home .home__main {
+  padding-block-start: clamp(0.5rem, 5.4vw, 5rem);
+}
+
+.frame--home .home__perch {
+  margin-block-start: clamp(-1rem, -0.7vw, 0rem);
 }
 
 @media (max-width: 61.99rem) {
+  /* 边栏落到正文之后。分类是二级信息，不该在小屏上挡在文章前面 */
+  .home {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      'roo'
+      'main'
+      'side';
+    gap: 0;
+  }
+
   .home__side {
     position: static;
+    margin-block-start: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .frame--home .home__main {
+    padding-block-start: clamp(1rem, 3vw, 2rem);
+  }
+
+  .frame--home .home__perch {
+    margin-block-start: 0;
   }
 }
+
+/* 页面 h1（那行紫眉标）与头条之间的距离 */
+.home__eyebrow {
+  margin-block-end: 0.4rem;
+}
+
+/*
+ * 头条与其余文章之间只留一段留白，不加分隔线。
+ * 画一条线试过，它会把「头条」读成一个独立的区块（像置顶帖），
+ * 而这里想说的是「同一份列表，第一条排得大一点」。
+ */
+/* 复合选择器是必须的：.feed 里那条 `margin: 0` 排在本文件后面，
+   同特异度下按源码顺序它会赢，单写 .home__rest 完全不生效 */
+.feed.home__rest {
+  margin-block-start: clamp(2.75rem, 5vw, 4rem);
+}
+
+/* ---------------------------------------------------------------------------
+ * 袋鼠与它脚下那座白丘
+ * ------------------------------------------------------------------------- */
+
+.home__perch {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/*
+ * 白丘。**画在这里而不是画进 Clouds.tsx** —— 云的画布是随视口横向拉伸的，
+ * 而袋鼠的横坐标跟着居中的 .shell 走，两者在 1280 与 1920 之间会错开一百多像素，
+ * 袋鼠于是悬在丘的一侧。绑在袋鼠自己身上，任何视口下它都坐在丘正中。
+ *
+ * 用 blur 把实心椭圆化开，而不是写 radial-gradient：
+ * 渐变要一个「全透明的纸色」端点，而 transparent 在部分浏览器里等于透明黑，
+ * 和白色混出来是一圈灰边。
+ */
+.home__perch::before {
+  content: '';
+  position: absolute;
+  inset-inline: -14%;
+  inset-block-end: -3%;
+  height: 34%;
+  border-radius: 50%;
+  background: var(--paper);
+  filter: blur(12px);
+}
+
+.home__roo {
+  position: relative; /* 压在白丘之上 */
+  display: block;
+  width: min(100%, 17.5rem);
+  height: auto;
+  margin-inline-start: auto;
+}
+
+@media (max-width: 61.99rem) {
+  /* 单栏下居中，并缩一档 —— 这时它上面只有一条站点头，太大会把标题整个挤到屏外 */
+  .home__perch {
+    justify-content: center;
+  }
+
+  .home__roo {
+    width: min(100%, 13.5rem);
+    margin-inline: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * 右侧边栏的三块
+ * ------------------------------------------------------------------------- */
 
 .side__block > .u-eyebrow {
   margin-block-end: 0.9rem;
@@ -96,15 +211,19 @@ a.card:hover {
 
 /** 边栏里的小卡片（订阅、关于） */
 .side__card {
-  border-radius: 0.5rem;
+  display: block;
+  border-radius: var(--radius);
   background: var(--surface);
   padding: 1.1rem 1.2rem;
-}
-
-.side__card p {
   font-size: var(--fs-small);
   color: var(--muted);
   line-height: 1.55;
+}
+
+.side__card p {
+  font-size: inherit;
+  color: inherit;
+  line-height: inherit;
 }
 
 .side__card .u-more {
@@ -112,13 +231,93 @@ a.card:hover {
   font-size: var(--fs-small);
 }
 
-/** 关于卡里那只小袋鼠，靠右下角坐着 */
-.side__roo {
-  display: block;
-  width: auto;
-  height: 4.5rem;
-  margin-inline-start: auto;
-  margin-block-start: -1.75rem;
+/** 订阅卡：整张卡就是那条 RSS 链接，左边一枚图标砖 */
+.side__card--action {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.05rem;
+  transition:
+    background-color 0.2s ease,
+    translate 0.2s ease;
+}
+
+.side__card--action:hover {
+  background: var(--chip);
+  translate: 0 -1px;
+}
+
+.side__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.55rem;
+  background: var(--paper);
+  color: var(--accent);
+}
+
+.side__icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------------------------------------------------------------------------
+ * 首页头条
+ * ------------------------------------------------------------------------- */
+
+/*
+ * 行长比正文窄（--lede 36rem 对 --measure 42rem）。
+ * 44px 的大字按正文行长排，一行能装七八十个字符，眼睛回到行首会跳错行。
+ */
+.lede {
+  max-width: var(--lede);
+}
+
+.lede__title {
+  margin: 0;
+}
+
+.lede__title a {
+  color: inherit;
+  transition: color 0.18s ease;
+}
+
+.lede__title a:hover {
+  color: var(--accent);
+}
+
+.lede__meta {
+  margin-block-start: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lede__meta > * + *::before {
+  content: '·';
+  margin-inline-end: 0.4rem;
+  opacity: 0.55;
+}
+
+.lede__summary {
+  margin-block-start: 0.7rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.lede__foot {
+  margin-block-start: clamp(1rem, 2vw, 1.35rem);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -244,7 +443,15 @@ a.card:hover {
 }
 
 .article__body {
-  max-width: var(--measure);
+  /*
+   * 上限必须夹一个 100%，不能只写 --measure。
+   * `margin-inline: auto` 会让这个网格格子按 fit-content 定宽而不是被拉满
+   * （CSS Grid：内联方向有 auto 外边距时不适用 stretch），于是格子的宽度变成
+   * 「内容的最小宽度，上限 --measure」—— 正文里一张宽表格能把它顶到 672px，
+   * 而窄屏上那一列只有 335px，多出来的部分被 body 的 overflow-x:clip 直接切掉。
+   * 夹上 100% 之后，格子永远不超过自己那一列。
+   */
+  max-width: min(100%, var(--measure));
   /* 在自己那一列里居中。靠左的话正文与右侧目录之间会空出一大条，读起来像掉了一栏 */
   margin-inline: auto;
   min-width: 0;
@@ -284,7 +491,7 @@ a.card:hover {
   .article__aside {
     position: static;
     order: -1;
-    max-width: var(--measure);
+    max-width: min(100%, var(--measure));
     margin-inline: auto;
     width: 100%;
     border-radius: var(--radius);
@@ -507,7 +714,7 @@ a.card:hover {
 
 .foot__roo {
   width: auto;
-  height: 3.25rem;
+  height: 2.75rem;
   flex: none;
 }
 

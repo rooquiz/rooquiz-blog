@@ -3,11 +3,10 @@ import { site, type Locale } from '@config'
 
 import { localePath } from '@/lib/content'
 import { t } from '@/lib/i18n'
-import { Kangaroo } from '@/components/brand/Kangaroo'
-import { ArrowRightIcon } from '@/components/layout/Icons'
+import { ArrowRightIcon, MailIcon } from '@/components/layout/Icons'
 
 /**
- * 首页右侧边栏：分类胶囊 + 订阅 + 关于。
+ * 右侧边栏：分类胶囊 + 订阅 + 关于。
  *
  * 三块都是「读完这篇之后还能去哪」，按可能性从高到低排 ——
  * 换个分类接着读 > 订阅以后接着读 > 去主站看产品。
@@ -43,14 +42,18 @@ export function CategoryRail({ tags, locale }: { tags: { tag: string; count: num
       )}
 
       <section className="side__block">
-        <h2 className="u-eyebrow">{copy.subscribeEyebrow}</h2>
-        <div className="side__card">
-          <p>{copy.subscribeBody}</p>
-          <Link href={localePath(locale, 'feed.xml')} className="u-more">
-            {copy.subscribeCta}
-            <ArrowRightIcon />
-          </Link>
-        </div>
+        {/* 全站唯一一处洋红。理由见 globals.css 里 .u-eyebrow--hot 的说明 */}
+        <h2 className="u-eyebrow u-eyebrow--hot">{copy.subscribeEyebrow}</h2>
+        {/*
+         * 整张卡就是那条 RSS 链接，不再在卡里另放一行「拿走 RSS 地址」——
+         * 卡里只有一句话，再挂一个行内链接会让人以为卡本身不可点。
+         */}
+        <Link href={localePath(locale, 'feed.xml')} className="side__card side__card--action">
+          <span className="side__icon">
+            <MailIcon />
+          </span>
+          <span>{copy.subscribeBody}</span>
+        </Link>
       </section>
 
       <section className="side__block">
@@ -61,8 +64,6 @@ export function CategoryRail({ tags, locale }: { tags: { tag: string; count: num
             {copy.aboutCta}
             <ArrowRightIcon />
           </a>
-          {/* 负边距让它坐在卡片右下角、半个身子探出卡外 */}
-          <Kangaroo idPrefix="side-roo" className="side__roo" simplified />
         </div>
       </section>
     </aside>

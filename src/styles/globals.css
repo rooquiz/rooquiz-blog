@@ -32,8 +32,8 @@
 
 :root {
   --stack-sans:
-    var(--next-font-sans), 'Figtree', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif,
-    system-ui, sans-serif;
+    var(--next-font-sans), 'Figtree', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', ui-sans-serif, system-ui,
+    sans-serif;
   --stack-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
 }
 
@@ -59,7 +59,7 @@ body {
   min-height: 100dvh;
   /*
    * 横向溢出的兜底。当前版面没有溢出（各断点量过），这条是给英雄区留的保险：
-   * 天空、云、彩虹拱都是满幅并且刻意画到画布之外，将来动它们的尺寸时
+   * 天空和云都是满幅并且刻意画到画布之外，将来动它们的尺寸时
    * 多出一两个像素就会让整站能左右拖动，在手机上非常明显。
    * 用 clip 不用 hidden：hidden 会把 body 变成滚动容器，
    * 里面那些 position:sticky 的边栏与目录会当场失效。
@@ -76,6 +76,10 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/*
+ * 页脚贴底靠 .frame 的 flex: 1 0 auto（见 sky.css）。
+ * 这里留一条兜底：万一将来有页面不走 SiteFrame，直接把 main 放在 body 下。
+ */
 body > main {
   flex: 1 0 auto;
 }
@@ -85,7 +89,7 @@ body > main {
   color: var(--accent-ink);
 }
 
-/* 焦点环用洋红圆角框，跟全站的圆角语言一致 */
+/* 焦点环用紫色圆角框，跟全站的圆角语言一致 */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -97,8 +101,11 @@ body > main {
  * ------------------------------------------------------------------------- */
 
 /**
- * 眉标：洋红、全大写、大字距的一行小字。整套设计里最醒目的一个信号 ——
+ * 眉标：紫、全大写、大字距的一行小字。整套设计里最醒目的一个信号 ——
  * 每一块内容都由它起头（ARTICLES / BROWSE BY CATEGORY / …）。
+ *
+ * 紫在天上和纸上都够对比度（5.0 / 7.2），所以天上天下是同一枚眉标，
+ * 不再像彩虹那版分出一个 --sky 变体。
  */
 .u-eyebrow {
   font-size: var(--fs-eyebrow);
@@ -107,6 +114,16 @@ body > main {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent);
+}
+
+/*
+ * 洋红那一枚。**全站只有「订阅」用它**。
+ * 洋红是 RooQuiz 的品牌色，留一处是为了不把品牌丢掉；只留一处是为了
+ * 那一处真的跳出来 —— 满页洋红眉标时，读者分不出哪个才是行动点。
+ * 它只出现在纸面上（订阅卡在天以下），所以不受天空对比度那条约束。
+ */
+.u-eyebrow--hot {
+  color: var(--hot);
 }
 
 /* 中文没有大小写，全大写是空操作，但 0.12em 字距会把词拆散 —— 收回去 */
@@ -121,12 +138,21 @@ body > main {
   color: var(--muted);
 }
 
-/** 页面主标题 */
+/** 首页头条。全站最大的一档字 */
+.u-hero {
+  font-size: var(--fs-hero);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/** 页面主标题（内页 / 文章页 h1） */
 .u-display {
   font-size: var(--fs-display);
   font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: 0;
+  line-height: 1.1;
+  letter-spacing: -0.012em;
   color: var(--ink);
   text-wrap: balance;
 }
@@ -147,7 +173,7 @@ body > main {
   line-height: 1.62;
 }
 
-/** 洋红的「继续读 →」。箭头在 hover 时往右挪一点 */
+/** 紫色的「继续读 →」。箭头在 hover 时往右挪一点 */
 .u-more {
   display: inline-flex;
   align-items: center;
@@ -176,7 +202,7 @@ body > main {
   display: inline-flex;
   align-items: center;
   gap: 0.45em;
-  border-radius: 0.45rem;
+  border-radius: 0.55rem;
   background: var(--chip);
   padding: 0.4em 0.9em;
   font-size: var(--fs-small);
@@ -241,7 +267,7 @@ a.chip:hover {
   line-height: 1.3;
 }
 
-/* 正文链接：洋红 + 洋红下划线，hover 时下划线加粗。整段里认得出来但不刺眼 */
+/* 正文链接：紫字 + 紫下划线，hover 时下划线加深。整段里认得出来但不刺眼 */
 .prose a {
   font-weight: 600;
   text-decoration: underline;
@@ -310,6 +336,27 @@ a.chip:hover {
 }
 
 /*
+ * 表格的横向滚动壳（由 components/mdx 的 MdxTable 包上）。
+ *
+ * 表格要 `width: auto` + `min-width: 100%`，两条都不能少：
+ *   - typography 插件给的是 `width: 100%`，那会把表格压到壳宽，
+ *     窄屏上单元格挤成一条条竖的，滚动条永远不出现；
+ *   - `max-content` 又太狠，长句单元格干脆不折行，一张三列表能拉到 900px。
+ * `auto` 是「能缩就缩，缩到最小内容宽为止」—— 装得下就不出滚动条，装不下才滚。
+ */
+.prose__scroll {
+  overflow-x: auto;
+  margin-block: 1.6em;
+  border-radius: var(--radius);
+}
+
+.prose__scroll > table {
+  width: auto;
+  min-width: 100%;
+  margin-block: 0;
+}
+
+/*
  * rehype-autolink-headings 配的是 behavior:'wrap'（见 lib/content/mdx.tsx）——
  * 整个标题文字本身就是那个 <a>。所以千万不能把它藏起来或按链接样式渲染，
  * 否则标题会连字一起消失 / 整行带下划线。它只当锚点用，视觉上完全继承标题。
@@ -325,7 +372,7 @@ a.chip:hover {
   font-weight: inherit;
 }
 
-/* hover 时在标题左侧露出一个洋红的 # 作为可点提示，不占正文的位置 */
+/* hover 时在标题左侧露出一个紫色的 # 作为可点提示，不占正文的位置 */
 .prose :is(h2, h3, h4) > a.heading-anchor::before {
   content: '#';
   position: absolute;

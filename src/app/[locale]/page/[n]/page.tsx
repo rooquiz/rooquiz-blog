@@ -60,7 +60,7 @@ export default async function PagedIndexPage({ params }: { params: Promise<{ loc
       section="journal"
       hero={
         <>
-          <p className="u-eyebrow u-eyebrow--sky">{copy.articlesEyebrow}</p>
+          <p className="u-eyebrow">{copy.articlesEyebrow}</p>
           <h1 className="u-display">{copy.pageN(current)}</h1>
         </>
       }

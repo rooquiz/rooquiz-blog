@@ -21,9 +21,9 @@ const dictionary = {
     allCategories: 'All categories',
     subscribeEyebrow: 'Subscribe',
     subscribeBody: 'New posts land in your reader the moment they go live. No email, no tracking.',
-    subscribeCta: 'Grab the feed',
     aboutEyebrow: 'About',
-    aboutBody: 'RooQuiz turns quizzes into a lead engine for coaches and creators. This is where we write down what works.',
+    aboutBody:
+      'RooQuiz turns quizzes into a lead engine for coaches and creators. This is where we write down what works.',
     aboutCta: 'Visit rooquiz.com',
 
     /* ---- 列表与文章 ---- */
@@ -60,7 +60,6 @@ const dictionary = {
     allCategories: '全部分类',
     subscribeEyebrow: '订阅',
     subscribeBody: '新文章发布即进你的阅读器。不要邮箱，也不做追踪。',
-    subscribeCta: '拿走 RSS 地址',
     aboutEyebrow: '关于',
     aboutBody: 'RooQuiz 帮教练与知识创作者把测评做成获客引擎。这里记下那些真正有效的做法。',
     aboutCta: '去 rooquiz.com',

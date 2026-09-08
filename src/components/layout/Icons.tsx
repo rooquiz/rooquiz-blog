@@ -3,7 +3,7 @@
  * （见 .head__icon svg 与 .u-more svg）—— 所以这里的 path 不带任何表现属性，
  * 换个位置用就换一套尺寸和颜色，不用改组件。
  *
- * 刻意不引图标库：全站只用到六个形状，一个依赖换六段 path 不划算。
+ * 刻意不引图标库：全站只用到七个形状，一个依赖换七段 path 不划算。
  */
 
 export function SearchIcon() {
@@ -37,6 +37,16 @@ export function RssIcon() {
     <svg viewBox="0 0 24 24" aria-hidden>
       <path d="M4.5 11.2a8.3 8.3 0 0 1 8.3 8.3M4.5 4.5a15 15 0 0 1 15 15" />
       <circle cx="5.2" cy="18.8" r="1.6" />
+    </svg>
+  )
+}
+
+/** 订阅卡那枚信封。圆角矩形 + 一道折角，跟全站「没有直角」对齐 */
+export function MailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <rect x="2.6" y="5" width="18.8" height="14" rx="3.2" />
+      <path d="m6 9.2 6 4.3 6-4.3" />
     </svg>
   )
 }

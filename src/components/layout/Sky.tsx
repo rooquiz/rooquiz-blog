@@ -1,60 +1,26 @@
-import type { ReactNode } from 'react'
-
-import { Clouds } from '@/components/brand/Clouds'
-import { Kangaroo } from '@/components/brand/Kangaroo'
-import { RainbowArc } from '@/components/brand/RainbowArc'
+import { Clouds, Contrails } from '@/components/brand/Clouds'
 
 /**
- * 每一页的顶部都是一片天，站点头压在它最深的那一段上。
+ * 页面顶部那片天。**只是一层装饰**，不包内容。
  *
- * 这样安排是为了不做吸顶头：吸顶头一旦滚出英雄区就得自己长出一层底色，
- * 而那层底色要么盖住正文要么在滚动时闪一下 —— 两种都要 JS 去听滚动。
- * 天空常驻在文档流里、头部留在天里，一行 JS 都不用，代价只是页面头会随滚动离开。
+ * 它绝对定位在 `.frame` 的顶部、高度写死，内容照常在文档流里从头排下来，
+ * 于是「天有多高」和「内容有多长」彻底解耦 —— 首页的英雄区文字、右栏的
+ * 分类与订阅可以一路排到天以下的纸面上，中间没有任何断点。
+ * 早先把内容套在天里面（天的高度由内容撑），结果是天要么被内容顶得很高，
+ * 要么得靠负 margin 把下面的内容拽回来，两条都要按断点手调。
  *
- * 两种尺寸：
- *   tall  —— 首页。整套演出：彩虹拱 + 坐在拱下的袋鼠 + 三层云。
- *   short —— 内页。只留云和一只从云后探头的袋鼠，标题排在云上方的空里。
+ * 站点头也压在这片天上，不吸顶 —— 吸顶头一旦滚出这片天就得自己长出一层底色，
+ * 而那层底色什么时候出现只有 JS 知道。天留在文档流里，全站零滚动监听。
  *
- * 层序（后面的压前面的）：天 → 彩虹拱 → 云 → 袋鼠 → 内容。
- * 拱脚因此没在半空中断掉，而是插进云里；袋鼠则坐在云前面。
+ * 两种高度：
+ *   tall  —— 首页。整套演出：两座云塔 + 尾迹 + 坐在云上的袋鼠（袋鼠在内容层里）。
+ *   short —— 内页。矮一半，只留云，标题排在云上方那段空里。
  */
-export function Sky({
-  size,
-  children,
-}: {
-  size: 'tall' | 'short'
-  /** 站点头，以及内页的标题块 */
-  children: ReactNode
-}) {
+export function Sky({ size }: { size: 'tall' | 'short' }) {
   return (
-    <div className={`sky sky--${size}`}>
-      {size === 'tall' && (
-        <>
-          <RainbowArc className="sky__arc" />
-          <Clouds className="sky__clouds" />
-          {/*
-           * 外面这层 span 只负责定位（绝对定位 + 横向居中），SVG 只负责动。
-           * 分开是必须的：居中靠的是 translate: -50%，而入场的落下与常驻的呼吸
-           * 也要写 translate —— 同一个元素上两者会互相覆盖，袋鼠会在动画第一帧
-           * 直接横向弹到左边去。
-           */}
-          <span className="sky__roo">
-            <Kangaroo idPrefix="hero-roo" className="sky__roo-art" />
-          </span>
-        </>
-      )}
-
-      {size === 'short' && (
-        <>
-          <Clouds className="sky__clouds" />
-          {/* 内页那只小一号，坐在云线右端 */}
-          <span className="sky__roo sky__roo--peek">
-            <Kangaroo idPrefix="peek-roo" className="sky__roo-art" simplified />
-          </span>
-        </>
-      )}
-
-      <div className="sky__content">{children}</div>
+    <div className={`sky sky--${size}`} aria-hidden>
+      {size === 'tall' && <Contrails className="sky__trails" />}
+      <Clouds className="sky__clouds" band={size === 'tall' ? 'full' : 'low'} />
     </div>
   )
 }

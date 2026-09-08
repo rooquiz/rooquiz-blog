@@ -31,7 +31,7 @@ export default async function TagsIndexPage({ params }: { params: Promise<{ loca
       section="tags"
       hero={
         <>
-          <p className="u-eyebrow u-eyebrow--sky">{copy.browseByCategory}</p>
+          <p className="u-eyebrow">{copy.browseByCategory}</p>
           <h1 className="u-display">{copy.categories}</h1>
         </>
       }

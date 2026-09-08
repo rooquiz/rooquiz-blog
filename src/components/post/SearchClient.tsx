@@ -95,7 +95,9 @@ export function SearchClient({ locale }: { locale: Locale }) {
               <li key={result.id}>
                 <Link href={`/${locale}/${result.id}`} className="row__link">
                   <p className="u-meta">
-                    <time dateTime={result.publishedAt as string}>{formatDate(result.publishedAt as string, locale)}</time>
+                    <time dateTime={result.publishedAt as string}>
+                      {formatDate(result.publishedAt as string, locale)}
+                    </time>
                   </p>
                   <h2 className="row__title mt-1">{result.title as string}</h2>
                   <p className="row__summary">{result.summary as string}</p>

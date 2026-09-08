@@ -61,7 +61,26 @@ function MdxImage({ src, alt = '', ...props }: ComponentPropsWithoutRef<'img'>) 
   )
 }
 
+/**
+ * 表格外面套一层横向滚动的壳。
+ *
+ * 不套的话宽表格会把整个 `.article__body` 顶宽 —— 表格的最小内容宽度是硬的
+ * （列不会自己折行），窄屏上实测 390px 视口里正文被撑到 510px，
+ * 而 body 上那条 `overflow-x: clip` 会把多出来的部分直接切掉，读者根本
+ * 看不到右边那几列。让表格自己滚，正文的行长就还是正文的行长。
+ *
+ * 加 tabindex 是为了键盘可达：能滚的容器必须能被聚焦，否则只有鼠标能滚它。
+ */
+function MdxTable(props: ComponentPropsWithoutRef<'table'>) {
+  return (
+    <div className="prose__scroll" tabIndex={0} role="region" aria-label="Table">
+      <table {...props} />
+    </div>
+  )
+}
+
 export const mdxComponents = {
   a: Anchor,
   img: MdxImage,
+  table: MdxTable,
 }

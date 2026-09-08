@@ -31,7 +31,7 @@ export default async function SearchPage({ params }: { params: Promise<{ locale:
       section="search"
       hero={
         <>
-          <p className="u-eyebrow u-eyebrow--sky">{copy.journal}</p>
+          <p className="u-eyebrow">{copy.journal}</p>
           <h1 className="u-display">{copy.search}</h1>
         </>
       }

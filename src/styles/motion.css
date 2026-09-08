@@ -2,8 +2,8 @@
  * 动效层。全站的动画集中在这一个文件里，方便一眼看全「这个站到底会动些什么」。
  *
  * 分三类：
- *   1. 入场   —— 页面加载时英雄区那套插画依次到位（云 → 彩虹由内向外绽开 → 袋鼠落下）
- *   2. 常驻   —— 云层横漂、袋鼠呼吸、彩虹的药丸沿弧缓慢流动
+ *   1. 入场   —— 页面加载时英雄区依次到位（云浮起 → 袋鼠落到云上）
+ *   2. 常驻   —— 三层云各自横漂、袋鼠呼吸
  *   3. 微交互 —— 链接和工具按钮只在用户操作时反馈
  *
  * ── 无障碍 ──
@@ -30,7 +30,7 @@
   /* -------------------------------------------------------------------------
    * 1 · 入场
    *
-   * 编排顺序是有意的：先有天地（云），再有拱门，最后主角落进拱下。
+   * 编排顺序是有意的：先有天地（云浮起），主角再落到云上。
    * 总时长压在 1.3s 以内 —— 再长就不是「到位」而是「等它演完」了。
    * ---------------------------------------------------------------------- */
 
@@ -38,10 +38,15 @@
     animation: cloud-in 0.7s ease-out both;
   }
 
-  .sky__roo-art {
+  .home__roo {
     animation:
-      roo-drop 0.78s cubic-bezier(0.34, 1.32, 0.52, 1) 0.5s both,
-      roo-bob 4.6s ease-in-out 1.3s infinite;
+      roo-drop 0.78s cubic-bezier(0.34, 1.32, 0.52, 1) 0.34s both,
+      roo-bob 4.6s ease-in-out 1.2s infinite;
+  }
+
+  /* 白丘跟着云一起浮起来，不然袋鼠落下时它已经在那儿等着了 */
+  .home__perch::before {
+    animation: cloud-in 0.7s ease-out both;
   }
 
   /* -------------------------------------------------------------------------
@@ -53,37 +58,14 @@
    * 同步的话整片云会像一块板在平移，纵深就没了。
    * alternate 来回摆而不是单向循环 —— 单向要求图形首尾可拼接，
    * 而这三层是手排的圆丘，接不上。
+   *
+   * transform-box: view-box 不能删：默认参考盒是元素自身的包围盒，
+   * 三层各自的包围盒不同，横移量按百分比算就会各不相同。
    */
   .cloud__layer {
     transform-box: view-box;
     animation: cloud-drift var(--dur) ease-in-out infinite alternate;
   }
-
-  /*
-   * 彩虹身上挂两条动画。
-   *
-   * 入场 arc-bloom：由内向外依次绽开。缩放的原点是圆弧的圆心（viewBox 里的
-   * 500,520，落在画布下方之外），所以每一环是「沿着自己的半径长出来」而不是
-   * 原地放大。transform-box: view-box 不能少 —— 默认参考盒是元素自身的包围盒，
-   * 那样七条弧会各绕各的中心缩放，散成一团。
-   *
-   * 常驻 arc-flow：药丸沿弧缓慢流动，位移正好是一个虚线周期，所以循环处无缝。
-   * 相邻环反向，看起来是编织；同向的话七条环一起朝一边跑，整个拱门会读成
-   * 一个加载动画。
-   */
-  .arc__ring {
-    transform-box: view-box;
-    transform-origin: 500px 520px;
-    animation:
-      arc-bloom 0.72s cubic-bezier(0.22, 1, 0.36, 1) both,
-      arc-flow 14s linear 1s infinite;
-    animation-delay: calc(0.1s + var(--ring) * 0.07s), 1s;
-  }
-
-  .arc__ring:nth-child(even) {
-    animation-direction: normal, reverse;
-  }
-
 }
 
 /* ---------------------------------------------------------------------------
@@ -101,31 +83,11 @@
   }
 }
 
-@keyframes arc-bloom {
-  from {
-    opacity: 0;
-    scale: 0.8;
-  }
-  to {
-    opacity: 1;
-    scale: 1;
-  }
-}
-
-@keyframes arc-flow {
-  from {
-    stroke-dashoffset: calc(var(--offset) * 1px);
-  }
-  to {
-    stroke-dashoffset: calc((var(--offset) + var(--period)) * 1px);
-  }
-}
-
 @keyframes roo-drop {
   from {
     opacity: 0;
-    translate: 0 30%;
-    scale: 0.92;
+    translate: 0 22%;
+    scale: 0.94;
   }
   to {
     opacity: 1;
@@ -141,7 +103,7 @@
     translate: 0 0;
   }
   50% {
-    translate: 0 -3.2%;
+    translate: 0 -2.6%;
   }
 }
 
@@ -169,17 +131,6 @@
 .brand:hover .brand__mark {
   translate: 0 -0.14em;
   rotate: -7deg;
-}
-
-.head__link {
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    translate 0.18s ease;
-}
-
-.head__link:hover {
-  translate: 0 -1px;
 }
 
 /* 明暗按钮的图标跟着转一点，暗示它是个开关而不是链接 */

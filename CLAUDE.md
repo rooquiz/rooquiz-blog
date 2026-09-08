@@ -6,14 +6,17 @@
 RooQuiz 博客（`blog.rooquiz.com`）。MDX 正文在 Supabase Storage，元数据在 Supabase
 Postgres，构建期固化成纯静态站部署到 Vercel。无后台，发布走 `/api/posts`。
 
-版式是「一片天 + 一道彩虹拱门 + 一只坐在拱下的袋鼠」，天空之下是一栏读物。
+版式是「一片天 + 两座软边云塔 + 一只坐在云上的袋鼠」，天空之下是一栏读物。
+首页把最新一篇提成头条，压在那片天里；右栏顶上坐着袋鼠，往下接分类与订阅。
 整套推导见 `README.md`「视觉设计」一节，以及 `src/styles/sky.css` 与
-`src/components/brand/*.tsx` 的注释。架构与不显然的技术决定见 `README.md`；
-发布接口契约见 `docs/publishing-api.md`；AI / n8n 接入指南见
-`docs/automating-publishing.md`（改接口或校验规则时要同步更新它）。
+`src/components/brand/*.tsx` 的注释。架构与不显然的技术决定见 `README.md`。
 
-`docs/5bb4eb118bb50.mp4` 是上一版设计（满幅分栏 + 滚动驱动视差）的参照录屏，
-那一版已整体移除，该文件只是历史留档，**不要再拿它当依据**。
+**参照稿是仓库根目录的 `demo.png`，吉祥物原图是 `roo.png`**（两个都没入版本库）。
+版式、配色、字号都是从 `demo.png` 上逐点量出来的 —— 改英雄区之前先打开它比一遍。
+`roo.png` 是设计交付的 1490×1056 原稿，`public/brand/` 下那两张 WebP 是从它裁出来的。
+
+早先还有两版设计已整体移除，**都不要再当依据**：
+一版是满幅分栏 + 滚动驱动视差，一版是彩虹拱门 + 矢量袋鼠。
 
 ## 命令
 
@@ -30,43 +33,56 @@ pnpm lint
 
 ### 版式与插画
 
-- **层序不能动**：`天(0) → 彩虹拱(1) → 云(2) → 袋鼠(3) → 内容(4)`，定义在
-  `src/styles/sky.css`。拱脚要插进云里、袋鼠要坐在云前面，全靠这个次序。
-  `.sky` 上的 `isolation: isolate` 也别删 —— 没有它这套 z-index 会和页面别处打架。
-- **`Kangaroo` / `RooMark` 的 `idPrefix` 是必填，且同一页不能重名**：SVG 的 id 是
-  文档级的，两只袋鼠撞 id 时后一份会把前一份的渐变整个抢走（表现是其中一只变成
-  纯黑剪影）。现有调用处各用各的前缀（`hero-roo` / `foot-roo` / `side-roo` /
-  `cover-${slug}` …），新增一处就再起一个。
-- **彩虹拱的三条几何规则**写在 `RainbowArc.tsx` 顶部（药丸尺寸恒定、周期由弧长整除、
-  相邻环错半周期）。改环数 `RINGS` 必须同步增删 `tokens.css` 里的 `--arc-N` ——
-  组件是按 `var(--arc-${i+1})` 逐环取色的，少一个色标那一环会直接不可见。
-- **云的画布是定宽 5120px 居中溢出的，不要改回 `width: 100%`**：山丘的物理尺寸必须恒定，
-  拉伸会把波长压短，天际线变成规则的正弦波，读出来是扇贝花边。它的
-  `preserveAspectRatio="none"` 只用于纵向随 `--cloud-h` 缩放，横向始终 1:1。
-  彩虹相反，用 `meet` —— 圆头药丸一旦被拉宽，端帽会压成椭圆，一眼看出是拽的。
+- **那片天是纯装饰层，不包内容**：`.sky` 绝对定位在 `.frame` 顶部、高度写死
+  （`--hero-h` / `--hero-h-sm`），内容照常在文档流里从头排下来，
+  想压在天里的自己把上边距排够。**别改回「内容套在天里、天的高度由内容撑」**——
+  首页那种「英雄区从天里一路排到纸面」的版式那样就得靠负 margin 把下半段拽回来，
+  每个断点手调一次。层序只有两层：天(0) → 其余一切(1)，靠
+  `.frame > :not(.sky)` 一条规则抬起来。`.sky` 上的 `isolation: isolate` 别删。
+- **袋鼠是位图，不是 SVG**（`public/brand/roo.webp`，头单独一张 `roo-head.webp`）。
+  参照稿那只是三维渲染的插画，矢量翻译出来是另一个角色 —— 之前那版矢量袋鼠
+  连同 `RainbowArc` 已整体删除。两张图刻意用原生 `<img>` 不走 `next/image`，
+  理由写在 `components/brand/Roo.tsx` 顶部。
+- **云的四条规矩**写在 `Clouds.tsx` 顶部：画布定宽 1512 单位按视口拉伸、
+  底边 y=340 就是纸面线、两座塔必须在最左最右、每层要十几团中等大小的云。
+  改之前先读，四条都踩过。
+- **每层云有 `fill` 和 `shade` 两档色**（`--cloud-back` / `--cloud-back-lo` …）。
+  少了背光那一档，三层叠出来只是一片雾，天际线糊成一团看不出是云。
+- **内页那条矮云是「开窗」不是「压扁」**：`Clouds` 的 `band="low"` 只把 viewBox
+  的下半截取出来（`LOW_BAND`），纵向仍是 1:1。直接把 340 单位塞进 150px 试过，
+  每团云被压成扁椭圆，一排下来读作一串气泡。`LOW_BAND.h` 和 sky.css 里
+  `.sky--short` 的 `--cloud-h` 是一对，改一个要改两个。
+- **袋鼠脚下那座白丘画在袋鼠身上（`.home__perch::before`），不在云里**：
+  云的画布随视口横向拉伸，而袋鼠的横坐标跟着居中的 `.shell` 走，
+  1280 和 1920 之间两者会错开一百多像素，袋鼠就悬在丘的一侧了。
 - **`--cloud-h` 必须按 `--hero-h` 取比例，不能各写各的单位**：两者都用 vw/rem 独立
-  clamp 过一版，宽屏上云带涨到封顶而英雄区早已封顶，云于是占满整个英雄区、
-  把彩虹拱和袋鼠整个埋掉。绑成比例后构图在任何视口下一致。
+  clamp 过一版，宽屏上云带涨到封顶而那片天早已封顶，云于是占满整片天、
+  把天际线顶到导航底下。绑成比例后构图在任何视口下一致。
+- **天空渐变是往左下越浅的**（右上最深），三个色标 + 195deg，都是量 `demo.png`
+  反解出来的。写成 155deg 试过 —— 那是朝右下，深浅整个左右颠倒。
+  两档线性也试过，中段和左上角对不齐，参照稿这条渐变前六成慢、后四成陡。
 - **标题字重 700 封顶，不要用 800**：参照稿那套字整站只加载 400/500/600，
   最重就是 600；800 会明显粗一档。Figtree 每档略轻，所以对到 700。
-- **彩虹拱压在云之前（z-index 2 > 云的 1），别改回去**：反过来做过一版，然后就一直在
-  跟自己较劲 —— 云一抬高就把拱腰斩，于是去挖更深的谷，谷一深天际线又塌成尖楔子。
-  拱门本来就该浮在云上。
-- **云的谷和 `--hero-shift` 绑定**：`Clouds.tsx` 的 `TROUGH_X` 就是袋鼠的横坐标，
-  改偏移量时要一起改，否则袋鼠会顶在峰尖上。
-- **云的天际线是算出来的，不要改回手排山丘**：手排的起伏天然规整（峰距、峰高都差不多），
-  一眼是纹样不是云。现在用三条不可通约周期的正弦叠加，周期取成整数倍会让合成波
-  规律重复，等于白做。
-- **天空渐变是往下越深的**，别反过来。云是浅色剪影，底下的天比它浅的话三层云会糊成一片。
-- **不要把站点头改成 `position: sticky`**。它常驻在英雄区那片天里是有意的：吸顶头滚出
+- **不要把站点头改成 `position: sticky`**。它常驻在那片天里是有意的：吸顶头滚出
   英雄区后需要自己长出底色，而那个时机只有 JS 知道。现在全站零滚动监听。
-- **几何量走 `tokens.css` 的变量**（`--shell` / `--measure` / `--hero-h` / `--hero-h-sm` /
-  `--gutter` / `--radius`），别在组件里写死尺寸。
-- **天上的文字用 `.u-eyebrow--sky`（紫）而不是 `.u-eyebrow`（洋红）**：洋红落在天空蓝上
-  只有约 4.3:1，而眉标是 13px 小字，够不上 WCAG 的大号文字豁免。纸面上仍用洋红。
+- **几何量走 `tokens.css` 的变量**（`--shell` / `--rail` / `--measure` / `--lede` /
+  `--hero-h` / `--hero-h-sm` / `--gutter` / `--radius`），别在组件里写死尺寸。
+- **主强调色是紫 `--accent`，洋红 `--hot` 全站只剩「订阅」那一枚眉标**
+  （`.u-eyebrow--hot`）。参照稿就是这么分的。紫在最深那档天空蓝上是 5.0:1、
+  在白纸上是 7.2:1，两边都够 —— 所以天上天下是同一枚眉标，
+  不再像彩虹那版分出 `.u-eyebrow--sky`。
 - **全站只有 Figtree 一款字**，是逐字比对挑出来的（圆 `o`、开口 `C`、单层带钩尾的 `g`）。
   换字前先把候选渲染出来和现状并排看，别凭字体名挑 —— 落选的几款差在哪写在
   `styles/globals.css` 顶部。
+- **首页那个网格是两列两行 + `grid-template-areas`**（`main roo` / `main side`）。
+  袋鼠单独占一格不是塞在右栏组件里 —— 窄屏塌成单栏后要靠 areas 把它排到最前面。
+  第二行必须是 `minmax(0, 1fr)`，否则右栏那格的高度等于自己的内容高，
+  里面 `position: sticky` 没有余量可滚，吸附等于失效。
+- **网格格子上 `margin-inline: auto` + `max-width` 要夹一个 100%**
+  （`max-width: min(100%, var(--measure))`）。内联方向有 auto 外边距时
+  网格不适用 stretch，格子按 fit-content 定宽 —— 正文里一张宽表格能把
+  `.article__body` 顶到 672px，而窄屏那一列只有 335px，多出来的被
+  `overflow-x: clip` 直接切掉。踩过一次。
 
 ### 动效（`src/styles/motion.css`）
 
@@ -79,16 +95,11 @@ pnpm lint
 - **不要加 `* { animation-duration: 0.01ms !important }` 那条 reduced-motion 全局兜底**。
   它会用同样的方式把滚动驱动动画弄死（时长归零 → 进度 0% → `opacity: 0`）。
   现在的做法是把装饰性动画逐条关进 `prefers-reduced-motion: no-preference`。
-- **袋鼠的定位和动画分在两个元素上**：外层 `.sky__roo` 用 `translate: -50%` 做横向居中，
-  内层 `.sky__roo-art` 才跑入场与呼吸。合成一个元素的话两处 `translate` 互相覆盖，
-  动画第一帧袋鼠会横向弹到左边去。
-- **自定义属性的媒体查询覆盖必须排在无条件声明之后**：`--hero-shift` 这类变量没有
-  特异度加成，同选择器下纯按源码顺序决胜。把 `@media` 那条写在前面，表现是
+- **自定义属性的媒体查询覆盖必须排在无条件声明之后**：这类变量没有特异度加成，
+  同选择器下纯按源码顺序决胜。把 `@media` 那条写在前面，表现是
   「媒体查询明明匹配却不生效」，而且 devtools 里不容易看出来。踩过一次。
-- **`.arc__ring` / `.cloud__layer` 上的 `transform-box: view-box` 不能删**：默认参考盒是
-  元素自身的包围盒，那样七条弧会各绕各的中心缩放，入场时散成一团。
-- 彩虹药丸「流动」的位移正好是一个虚线周期（`--period`，由 `RainbowArc` 算好传下来），
-  循环处才无缝。改 `PILL` / `PILL_GAP` 不用动 CSS，但别把这个变量断掉。
+- **`.cloud__layer` 上的 `transform-box: view-box` 不能删**：默认参考盒是元素自身的
+  包围盒，三层各自的包围盒不同，横移量按百分比算就会各不相同。
 
 ### 明暗主题
 
@@ -107,6 +118,9 @@ pnpm lint
 - **内容页一律 `export const dynamic = 'force-static'`**，凡是列举得完的路由都要
   写 `generateStaticParams` + `dynamicParams = false`。新增页面后跑一次
   `pnpm build`，确认它在产物清单里是 `●`/`○` 而不是 `ƒ`。
+- **窄屏截图别用 `chromium --headless --window-size=390,...`**：旧版 headless
+  有最小窗口宽度（约 500），它会按 510 排版再把图裁到 390，看起来像整页横向溢出，
+  其实是假的。要走 CDP 的 `Emulation.setDeviceMetricsOverride`。
 - **改完样式要重启 `next start` 再看**：`pnpm build` 会换掉 CSS chunk 的 hash，
   而旧的 `next start` 进程还在用旧 HTML，引用的 CSS 已被删掉 → 整页无样式，
   表现是 `next/image` 的 `fill` 图铺满全屏。杀进程用 `lsof -ti :8200 | xargs kill`，
@@ -118,6 +132,9 @@ pnpm lint
 - **`src/lib/supabase/admin.ts` 带 `server-only`**，别在组件里 import。
 - **OG 图的字体是静态实例，不能换成可变字体**（`src/lib/og-fonts/`）：Satori 拿到
   可变字体只渲染默认实例（wght 400），标题就永远粗不起来。取法见那边的 README。
+- **改配色要连 `src/lib/og.tsx` 顶部那组常量和 `app/[locale]/layout.tsx` 的
+  `themeColor` 一起改**：Satori 不读 CSS 变量，OG 图那几个 hex 是手工对齐的；
+  地址栏底色也是写死的 hex。
 - **`pnpm-workspace.yaml` 的两个 overrides 不要删**（unified / style-to-js），
   原因写在 README「依赖 pin」一节。
 - **别把 `sync-content.mts` 里的 CI 守卫改回静默回落**。缺凭据时在 CI 中必须让构建

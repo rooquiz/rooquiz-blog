@@ -51,13 +51,16 @@ function clamp(text: string, max: number): string {
 }
 
 /* 与 tokens.css 的浅色一版手工对齐 */
-const INK = '#21203a'
+const INK = '#0d2a63'
 const PAPER = '#ffffff'
-const ACCENT = '#e4008c'
-const VIOLET = '#5b4bdb'
-const MUTED = '#64627f'
-const SKY_TOP = '#74c9ea'
-const SKY_BOTTOM = '#c8ebfa'
+/** 主强调：紫。站内的眉标、链接、当前栏目都是它 */
+const ACCENT = '#4a37e0'
+/** 洋红。站内只留给「订阅」，这里只用在右下角那行戳记 */
+const HOT = '#bf22d6'
+const MUTED = '#586c93'
+/* OG 图的天空是竖向渐变（1200×630 的横幅上斜向渐变看不出来），深浅两端取站内那条的两头 */
+const SKY_TOP = '#a3d7fd'
+const SKY_BOTTOM = '#e0f2fe'
 
 /**
  * 云线：一排骑在天空带下沿的白圆。半径拉开档次、圆心也各自浮沉，
@@ -130,10 +133,10 @@ export async function renderOgImage({
           />
         ))}
 
-        {/* 文字商标。Roo 墨色 / Quiz 紫 / BLOG 一枚洋红胶囊，和站内同一套 */}
+        {/* 文字商标。Roo 墨蓝 / Quiz 紫 / BLOG 一枚紫胶囊，和站内同一套 */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '52px 64px' }}>
           <div style={{ display: 'flex', fontSize: 40, fontWeight: 700, color: INK }}>Roo</div>
-          <div style={{ display: 'flex', fontSize: 40, fontWeight: 700, color: VIOLET }}>Quiz</div>
+          <div style={{ display: 'flex', fontSize: 40, fontWeight: 700, color: ACCENT }}>Quiz</div>
           <div
             style={{
               display: 'flex',
@@ -193,7 +196,7 @@ export async function renderOgImage({
           }}
         >
           <div style={{ display: 'flex' }}>{copy.title.toUpperCase()}</div>
-          <div style={{ display: 'flex', color: ACCENT }}>{stamp ?? 'BLOG.ROOQUIZ.COM'}</div>
+          <div style={{ display: 'flex', color: HOT }}>{stamp ?? 'BLOG.ROOQUIZ.COM'}</div>
         </div>
       </div>
     </div>,

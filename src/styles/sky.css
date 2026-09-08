@@ -1,112 +1,72 @@
 /*
- * 英雄区 —— 一片天、一道彩虹拱、一只坐在拱下的袋鼠，底下三层云把天接回纸面。
+ * 英雄区 —— 一片天、两座云塔、一只坐在云上的袋鼠。
  *
- * 整块东西在文档流里（不是固定定位），站点头就压在天最深的那一段上。
- * 好处是全站不需要一行滚动监听：吸顶头一旦离开英雄区就得自己长出底色，
- * 而那层底色什么时候出现只有 JS 知道。代价是页面头会随滚动离开，可以接受。
+ * `.sky` 是**纯装饰层**：绝对定位在 `.frame` 顶部、高度写死（--hero-h），
+ * 内容（站点头、首页英雄区、右栏、文章流）全部在文档流里从头往下排，
+ * 想压在天里的就自己把上边距排够，想落在纸上的自然就落在纸上。
  *
- * 层序（z-index）：天(0) → 云(1) → 彩虹拱(2) → 袋鼠(3) → 内容(4)。
+ * 这样分工的好处是「天有多高」和「内容有多长」互不牵扯。早先把内容套在天里
+ * （天的高度由内容撑起来），首页那种「英雄区从天里一路排到纸面」的版式就得靠
+ * 负 margin 把下半段拽回来，每个断点都要手调一次。
  *
- * **拱门压在云之前**，不是之后。反过来做过一版，然后就一直在跟自己较劲：
- * 云一抬高就把拱腰斩，于是去挖更深的谷；谷一深天际线就塌成一个尖楔子。
- * 根子在层序 —— 拱门本来就该浮在云上，它不需要靠谷「让」出来。
- * 云上仍然留一段和缓的下沉（见 Clouds.tsx 的 TROUGH_X），那是给袋鼠坐的开阔感，
- * 不是给拱门腾地方。
+ * 整块东西在文档流里、站点头就压在天上，不吸顶 —— 吸顶头一旦离开这片天就得
+ * 自己长出底色，而那层底色什么时候出现只有 JS 知道。代价是页面头会随滚动离开。
+ *
+ * 层序：天 + 尾迹 + 云（.sky，z 0）→ 其余一切（z 1）。
+ * 只有两层，因为袋鼠不再是天的一部分 —— 它就是右栏里的第一个元素，
+ * 天生压在云前面。（彩虹拱那一版有五层，拱脚要插进云里、袋鼠要坐在云前面，
+ * 层序一动整个构图就散；那道拱连同它那套 z-index 已整体移除。）
  */
 
-.sky {
+.frame {
   position: relative;
   /* 建独立层叠上下文，里面这套 z-index 不会和页面其它地方打架 */
   isolation: isolate;
-  overflow: hidden;
-  /*
-   * 渐变必须在顶部四分之一之内走完，不能铺满整个英雄区。
-   * 云占掉了下面 85%，铺满的话实际露出来的只有最上面那一小段 ——
-   * 那一段里颜色几乎没变，天看上去是一块均匀的浅蓝，
-   * 浅色的云剪影贴上去就分不出层。压缩之后云线附近的天明显更深，云才浮得出来。
-   */
-  background: linear-gradient(to bottom, var(--sky-1) 0%, var(--sky-2) 11%, var(--sky-3) 24%);
+  /* 内容少的页面（标签、空搜索）靠这条把页脚推到底部 */
+  flex: 1 0 auto;
 }
 
-.sky--tall {
-  min-height: var(--hero-h);
+/*
+ * 除了那层天，`.frame` 的直接子节点全部抬到天上面。
+ * 写成 `> :not(.sky)` 而不是逐个类名点名：将来往 frame 里加东西
+ * （面包屑、公告条）不用记得回来补一条，忘了的表现是新元素被云吃掉半截。
+ */
+.frame > :not(.sky) {
+  position: relative;
+  z-index: 1;
+}
+
+.sky {
+  position: absolute;
+  z-index: 0;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: var(--hero-h);
+  /* 云的画布比视口宽，多出来的部分在这里裁掉 */
+  overflow: hidden;
+  /*
+   * 右上最深 → 左下最浅。CSS 的角度是「渐变指向哪边」：195deg 基本朝下、略偏左，
+   * 所以起点色（deep）压在右上角、终点色（pale）铺到左下角。
+   * 角度和三个色标都是量参照稿反解出来的：竖向每 100px 变浅约 0x0b，
+   * 横向整整 1500px 才变浅 0x22 —— 竖向陡将近四倍，所以只离正下方 15 度。
+   * 中间那站 62% 也是量出来的，参照稿这条渐变前慢后陡，不是线性的。
+   * 写成 155deg 试过一版（那是朝右下），深浅整个左右颠倒，
+   * 云塔最密的左边反而成了天最厚的地方，整片天读起来发闷。
+   */
+  background: linear-gradient(195deg, var(--sky-deep) 0%, var(--sky-mid) 62%, var(--sky-pale) 100%);
 }
 
 .sky--short {
-  min-height: var(--hero-h-sm);
+  height: var(--hero-h-sm);
 }
-
-/*
- * 彩虹拱。
- *
- * 宽高一起限：先按宽度取值，再用 max-height 封顶。两条都生效时，SVG 的盒子会比
- * 内容的固有比例矮，此时 preserveAspectRatio="xMidYMax meet" 会把拱整体缩小、
- * 居中、贴着盒底放 —— 也就是矮屏上拱自动变小且仍然坐在云线上，
- * 而不是被裁掉半个顶。这就是这里不用 background-image 的原因：
- * background-size 给不出「等比缩小 + 底对齐」这个组合。
- */
-.sky__arc {
-  position: absolute;
-  z-index: 2;
-  /* 和袋鼠共用同一个右移量 —— 拱门要罩住它，两者必须一起偏 */
-  inset-inline-start: calc(50% + var(--hero-shift));
-  translate: -50% 0;
-  inset-block-end: 3.5rem;
-  width: min(41rem, 46vw);
-  height: auto;
-  max-height: 68%;
-}
-
-/*
- * 袋鼠。外层只管定位（按高度定尺寸 —— 它得坐在云线上，宽度是多少无所谓），
- * 里面那张 SVG 只管动效，两者分开的原因见 Sky.tsx 里的注释。
- */
-.sky__roo {
-  position: absolute;
-  z-index: 3;
-  display: block;
-  inset-inline-start: calc(50% + var(--hero-shift));
-  translate: -50% 0;
-  /* 脚落在前景白云上，角色可以比彩虹脚更低，形成前后关系。 */
-  inset-block-end: 1.75rem;
-  height: clamp(9rem, 14vw, 13rem);
-}
-
-.sky__roo-art {
-  display: block;
-  width: auto;
-  height: 100%;
-}
-
-/*
- * 内页那只：挪到右侧、缩小，坐在云线上。
- *
- * 曾经试过把它压到云层之下只露一个头（z-index 1），效果不稳：云的天际线是一串
- * 圆丘，某个 x 上是峰、隔 100px 就是谷，而这只的横向位置是按视口百分比走的 ——
- * 宽屏上正好埋进峰里，窄屏上就悬在谷的上方变成一颗飘着的头。
- * 现在和首页那只一样压在云之上（继承 .sky__roo 的 z-index 3），落位只跟盒底有关，
- * 与云的形状彻底解耦。窄屏收起 —— 那里它会和标题抢位置。
- */
-.sky__roo--peek {
-  inset-inline-start: auto;
-  inset-inline-end: clamp(1rem, 7vw, 6rem);
-  translate: none;
-  inset-block-end: 0;
-  height: clamp(5rem, 10vw, 7.5rem);
-}
-
-@media (max-width: 47.99rem) {
-  .sky__roo--peek {
-    display: none;
-  }
-}
-
 
 /*
  * 云。
  *
- * 宽屏铺满，窄屏保持 82rem 的最小画布再居中裁切。桌面还原参考图的大轮廓，
- * 手机上也不会把整片云横向压扁成密集的小波纹。
+ * 宽屏铺满，窄屏保持 84rem 的最小画布再居中裁切 —— 桌面还原参考图的大轮廓，
+ * 手机上也不会把那两座塔横向压扁成一排小波纹。
+ * `margin-inline-start: min(-50vw, -42rem)` 就是「负的半个画布宽」，
+ * 和下面的 width 是一对，改一个要改两个。
  *
  * 居中用负 margin 而不是 translate：translate 要留给入场动画（云从下方浮起），
  * 同一个元素上两条 translate 会互相覆盖，云会在动画第一帧横向弹掉半个画布。
@@ -116,99 +76,64 @@
  */
 .sky__clouds {
   position: absolute;
-  z-index: 1;
   inset-inline-start: 50%;
-  margin-inline-start: min(-50vw, -41rem);
+  margin-inline-start: min(-50vw, -42rem);
   inset-block-end: -1px;
-  width: max(100vw, 82rem);
-  height: 100%;
+  width: max(100vw, 84rem);
+  height: var(--cloud-h);
   display: block;
 }
 
 /*
- * 云带高度**按英雄区高度取比例**，不要写成独立的 vw / rem。
+ * 云带高度**按天的高度取比例**，不要写成独立的 vw / rem。
+ * 两者各按各的单位涨过一版：宽屏上云带一路涨到封顶，而 --hero-h 早就封顶了，
+ * 云于是占满整片天、天际线顶到导航底下。绑成比例之后，
+ * 「天上留多少空、云占多少」在任何视口下都是同一个构图。
  *
- * 两者各按各的单位涨过一版：宽屏上 26vw 一路涨到封顶的 456px，而 --hero-h 早就被
- * 30rem 卡在 480 —— 云带于是占满整个英雄区，天际线顶到导航底下，彩虹拱和袋鼠
- * 被整个埋掉。绑成比例之后，「天上留多少空、云占多少」在任何视口下都是同一个构图。
- *
- * 0.85 是量出来的：云带顶边落在英雄区高度的 15% 处，往下一直铺到底。
+ * 0.72 是量出来的：参照稿里最高那座塔的塔顶落在天高的 28% 处。
  */
-.sky--tall {
-  --cloud-h: calc(var(--hero-h) * 0.85);
-/*
-   * 右移量。参考稿是**定值 331px**（一个 50rem 宽的居中盒子里，角色靠右端对齐），
-   * 不是百分比 —— 所以这里第一项写死 20.7rem。
-   * 第二项是护栏：拱门半宽约 20.5rem，`50vw - 25rem` 保证它的右缘不会顶出视口，
-   * 在 1024 这类中等宽度上会接管。
-   */
-  --hero-shift: min(20.7rem, calc(50vw - 25rem));
+.sky {
+  --cloud-h: calc(var(--hero-h) * 0.72);
 }
 
+/*
+ * 内页的云不按比例缩，而是写死一个高度，配 Clouds 的 band="low" 取景框 ——
+ * 那扇窗正好是 190 个 viewBox 单位，所以这里也必须是 11.875rem，纵向才是 1:1。
+ * 两个数是一对，改一个要改两个（见 Clouds.tsx 的 LOW_BAND）。
+ */
 .sky--short {
-  --cloud-h: calc(var(--hero-h-sm) * 0.55);
-  --hero-shift: 0px;
+  --cloud-h: 11.875rem;
 }
 
-.sky--short .sky__clouds {
-  height: var(--cloud-h);
+/* 飞机尾迹。排在天的上半段，和云不重叠 */
+.sky__trails {
+  position: absolute;
+  inset-inline-start: 50%;
+  margin-inline-start: min(-50vw, -42rem);
+  inset-block-start: 0;
+  width: max(100vw, 84rem);
+  height: calc(var(--hero-h) * 0.62);
+  display: block;
 }
 
-/*
- * 窄屏取消右移，拱门与袋鼠回到正中，并把拱放大。
- * 偏移是为宽屏的版面重心服务的（左边留给内容、右边放插画）；窄屏是单栏，
- * 没有那个重心可言，继续右移只会把拱门顶出视口右边。
- * 云的谷底在 x≈2850，居中后袋鼠落在 2560 —— 那一带同样是低处，仍然对得上。
- *
- * 位置要紧：这条必须排在上面那两条 --hero-shift 之后。自定义属性没有特异度加成，
- * 同一个选择器下纯粹按源码顺序决胜，写在前面会被后面那条无条件的直接覆盖 ——
- * 踩过一次，表现是窄屏上媒体查询「明明匹配却不生效」。
- */
 @media (max-width: 52rem) {
-  .sky--tall {
-    --hero-shift: 0px;
+  /* 窄屏收起尾迹：画布被裁掉两侧后，剩下的那截读作一道莫名的斜线 */
+  .sky__trails {
+    display: none;
   }
-
-  .sky__arc {
-    width: 82vw;
-  }
-}
-
-.sky__content {
-  position: relative;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  min-height: inherit;
-}
-
-/* 内页标题排在云上方的那段空里，所以底部要给云让出整整一个云高 */
-.sky--short .sky__content {
-  padding-block-end: var(--cloud-h);
 }
 
 /* ---------------------------------------------------------------------------
- * 内页顶部的标题块
+ * 内页顶部的标题块。排在云上方那段空里
  * ------------------------------------------------------------------------- */
 
-.sky__title {
-  margin-block-start: auto;
-  padding-block-start: clamp(1.5rem, 4vw, 3rem);
+.frame__hero {
+  padding-block: clamp(2rem, 5vw, 3.25rem) clamp(1.5rem, 4vw, 2.5rem);
 }
 
-.sky__title .u-display {
+.frame__hero .u-display {
   margin-block-start: 0.7rem;
-  max-width: 22ch;
-}
-
-/*
- * 天上的眉标走紫不走洋红。洋红 #e4008c 落在 --sky-2 这档蓝上对比度约 4.3:1，
- * 而眉标是 13px 的小字（够不上 WCAG 的「大号文字」豁免），差一档不合格。
- * 紫 #5b4bdb 在整条天空渐变上都在 5:1 以上，而且正好呼应彩虹的冷端。
- * 纸面上的眉标不受这条约束，仍然是洋红。
- */
-.u-eyebrow--sky {
-  color: var(--violet);
+  max-width: 24ch;
 }
 
 .sky__meta {
@@ -236,45 +161,48 @@
   align-items: center;
   gap: clamp(1rem, 3vw, 2.5rem);
   min-height: var(--head-h);
-  padding-block: 0.9rem;
+  padding-block: 1rem;
 }
 
 .head__nav {
   display: flex;
   align-items: center;
-  gap: clamp(0.9rem, 2.2vw, 2rem);
+  gap: clamp(0.9rem, 2.4vw, 2.25rem);
   /* 导航贴着商标走，右侧那组图标才靠 margin-left:auto 推到边上 */
-  margin-inline-start: clamp(0.5rem, 3vw, 2.5rem);
+  margin-inline-start: clamp(0.5rem, 4vw, 3.5rem);
 }
 
 .head__link {
+  position: relative;
   font-weight: 500;
   color: var(--ink);
-  border-radius: 0.4rem;
-  padding: 0.35rem 0.7rem;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease;
+  padding-block: 0.35rem;
+  transition: color 0.18s ease;
 }
 
 .head__link:hover {
-  background: rgb(255 255 255 / 0.45);
+  color: var(--accent);
 }
 
-.dark .head__link:hover,
-[data-theme='dark'] .head__link:hover {
-  background: rgb(255 255 255 / 0.1);
-}
-
-/** 当前栏目：洋红 + 一层浅底，比只变色更容易在这片蓝上被看见 */
+/*
+ * 当前栏目：紫字 + 一道紫下划线。
+ * 用下划线而不是浅底色块 —— 天上本来就没有别的实心块，加一块底会读成按钮；
+ * 一道线是「你在这儿」，和标签页同一个惯例。
+ * 线画在 ::after 上而不是 text-decoration：后者跟着字形的下缘走，
+ * 在 Figtree 里离字太近，而且没法加圆头。
+ */
 .head__link[aria-current] {
   color: var(--accent);
-  background: transparent;
 }
 
-.dark .head__link[aria-current],
-[data-theme='dark'] .head__link[aria-current] {
-  background: transparent;
+.head__link[aria-current]::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -0.35rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .head__tools {
@@ -308,8 +236,8 @@
 }
 
 .head__icon svg {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -318,16 +246,16 @@
 }
 
 /* ---------------------------------------------------------------------------
- * 文字商标：Roo · 袋鼠头 · Quiz + 洋红的 BLOG 小标
+ * 文字商标：Roo · 袋鼠头 · Quiz
  * ------------------------------------------------------------------------- */
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.1em;
-  font-size: clamp(1.25rem, 1.9vw, 1.5rem);
+  gap: 0.04em;
+  font-size: clamp(1.375rem, 2vw, 1.625rem);
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
   line-height: 1;
   white-space: nowrap;
 }
@@ -337,17 +265,17 @@
 }
 
 .brand__word--alt {
-  color: var(--violet);
+  color: var(--accent);
 }
 
 /*
- * 袋鼠头夹在两个音节之间。它比字高一点点并往上提 —— 和字一样高的话
- * 耳朵尖会顶在 x-height 上，看起来像掉下去了。
+ * 袋鼠头夹在两个音节之间。它比字高不少并往上提 —— 这只是三分之四侧脸、
+ * 耳朵占了上半张图，按字高排的话脸会缩成一个点，看不出是什么。
  */
 .brand__mark {
   width: auto;
-  height: 1.5em;
-  margin-block-start: -0.34em;
+  height: 1.72em;
+  margin-block-start: -0.42em;
   margin-inline: 0.06em;
 }
 
@@ -377,16 +305,16 @@
 @media (max-width: 47.99rem) {
   .head {
     flex-wrap: wrap;
-    row-gap: 0.35rem;
-    padding-block: 0.75rem;
+    row-gap: 0.6rem;
+    padding-block: 0.85rem;
   }
 
   .head__nav {
     /* order 把它推到第二行；width:100% 逼出换行点 */
     order: 3;
     width: 100%;
-    margin-inline-start: -0.7rem;
-    gap: 0.35rem;
+    margin-inline-start: 0;
+    gap: 1.25rem;
   }
 
   .head__tools {
@@ -401,5 +329,4 @@
   .head__rss {
     display: none;
   }
-
 }
