@@ -3,23 +3,24 @@ import { site, type Locale } from '@config'
 
 import { localePath } from '@/lib/content'
 
-import { RooHead } from './Roo'
+import { Logo } from './Logo'
 
 /**
- * 文字商标：Roo · 袋鼠头 · Quiz。小袋鼠是字标的一部分，不是独立图标。
+ * 站点商标，链回首页。就是设计交付的那枚锁定版 logo（见 Logo.tsx）。
  *
- * 袋鼠头夹在两个音节中间而不是摆在最左边 —— 摆左边它就只是一个图标，
- * 夹在中间才成为字的一部分（Roo 正好是「袋鼠」的昵称，这个双关是整个商标的支点）。
+ * 早先这里是用文字排出来的字标 —— `Roo` + 一张袋鼠头位图 + `Quiz`，
+ * 后半段刻意染成全站的强调紫。换成交付稿之后有两处跟着变了，都是有意的：
+ *   - 字母是同一个颜色（跟 `--ink` 走），不再有「后半段是紫的」那个呼应；
+ *   - 袋鼠的尾巴扫进了 QUIZ，整枚是一个锁定图形，所以 hover 时那颗头轻轻一跳的
+ *     彩蛋没有可单独动的部件了，已经从 motion.css 里撤掉。
  *
- * 两个音节颜色不同：Roo 墨蓝、Quiz 紫。紫是全站的强调色，
- * 商标后半段和眉标、链接是同一个紫，所以它读起来是「这个站的颜色」而不是装饰。
+ * 可读名字挂在这个 `<a>` 上（`aria-label`），里面那张 SVG 是 `aria-hidden` ——
+ * 图形本身不该再被读一遍。
  */
 export function Wordmark({ locale }: { locale: Locale }) {
   return (
     <Link href={localePath(locale)} className="brand" aria-label={site.locales[locale].title}>
-      <span className="brand__word">Roo</span>
-      <RooHead className="brand__mark" />
-      <span className="brand__word brand__word--alt">Quiz</span>
+      <Logo />
     </Link>
   )
 }

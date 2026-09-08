@@ -246,37 +246,28 @@
 }
 
 /* ---------------------------------------------------------------------------
- * 文字商标：Roo · 袋鼠头 · Quiz
+ * 商标：交付的锁定版 logo（RO + 红圈袋鼠 + QUIZ）
  * ------------------------------------------------------------------------- */
 
+/*
+ * `color` 要显式给：logo 里的字母用的是 `currentColor`（这样才跟得上明暗主题，
+ * 理由见 components/brand/Logo.tsx），继承来的颜色不可靠 ——
+ * 这条链子上任何一层将来改了 color，商标就跟着变色。
+ */
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.04em;
-  font-size: clamp(1.375rem, 2vw, 1.625rem);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.brand__word {
   color: var(--ink);
 }
 
-.brand__word--alt {
-  color: var(--accent);
-}
-
 /*
- * 袋鼠头夹在两个音节之间。它比字高不少并往上提 —— 这只是三分之四侧脸、
- * 耳朵占了上半张图，按字高排的话脸会缩成一个点，看不出是什么。
+ * 定高不定宽。高度按 --logo-h 走（取值怎么来的见 tokens.css），
+ * 宽度由 viewBox 的 514:140 自己算 —— 这枚 logo 只能整体缩放，不存在窄版。
  */
-.brand__mark {
+.brand .logo {
+  display: block;
+  height: var(--logo-h);
   width: auto;
-  height: 1.72em;
-  margin-block-start: -0.42em;
-  margin-inline: 0.06em;
 }
 
 /*

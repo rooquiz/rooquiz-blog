@@ -122,17 +122,11 @@
  * 属于「按下去有反应」而不是装饰，所以不关在 reduced-motion 里。
  * ------------------------------------------------------------------------ */
 
-/* 商标里那颗袋鼠头：鼠标扫过时轻轻一跳。整站最小的一个彩蛋 */
-.brand__mark {
-  transition:
-    translate 0.24s cubic-bezier(0.34, 1.4, 0.5, 1),
-    rotate 0.24s cubic-bezier(0.34, 1.4, 0.5, 1);
-}
-
-.brand:hover .brand__mark {
-  translate: 0 -0.14em;
-  rotate: -7deg;
-}
+/*
+ * 商标那颗袋鼠头 hover 时轻轻一跳的彩蛋已经撤掉：换成交付的锁定版 logo 之后，
+ * 袋鼠和字母是一个整体（那条尾巴一路扫到 QUIZ 底下），没有可单独动的部件 ——
+ * 硬要动就是让尾巴在字底下平移，读起来是图错位了。见 components/brand/Logo.tsx。
+ */
 
 /* 明暗按钮的图标跟着转一点，暗示它是个开关而不是链接 */
 .theme-toggle svg {
