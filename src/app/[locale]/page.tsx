@@ -7,6 +7,7 @@ import { t } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
 import { RooMascot } from '@/components/brand/Roo'
 import { SiteFrame } from '@/components/layout/SiteFrame'
+import { HomeMotion } from '@/components/motion/HomeMotion'
 import { CategoryRail } from '@/components/post/CategoryRail'
 import { FeaturedPost } from '@/components/post/FeaturedPost'
 import { Pager } from '@/components/post/Pager'
@@ -40,6 +41,13 @@ export default async function BlogIndexPage({ params }: { params: Promise<{ loca
   return (
     /* 不传 hero —— 首页要的是拉满的那片天，英雄区由下面这个两栏网格自己排出来 */
     <SiteFrame locale={locale} localeHrefs={HOME_PATHS} section="journal">
+      {/*
+       * 入场编排。零 DOM 的客户端组件 —— 它要动的东西跨 .sky（在 SiteFrame 里）
+       * 和下面这个网格两棵子树，没有共同的客户端边界，所以自己去查 .frame--home。
+       * 只有首页挂它，那份 GSAP 也就只进首页的 chunk。
+       */}
+      <HomeMotion />
+
       <main className="shell home">
         {/*
          * 袋鼠是网格里的一个格子（grid-area: roo），不塞在右栏组件里。

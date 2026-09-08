@@ -1,10 +1,22 @@
 /*
- * 动效层。全站的动画集中在这一个文件里，方便一眼看全「这个站到底会动些什么」。
+ * 动效层。除了首页那段入场，全站的动画都集中在这一个文件里。
  *
  * 分三类：
- *   1. 入场   —— 页面加载时英雄区依次到位（云浮起 → 袋鼠落到云上）
- *   2. 常驻   —— 三层云各自横漂、袋鼠呼吸
+ *   1. 常驻   —— 三层云各自横漂
+ *   2. 首帧   —— 首页入场动画的起点（只是起点，动画本身在 JS 里）
  *   3. 微交互 —— 链接和工具按钮只在用户操作时反馈
+ *
+ * ── 首页那段入场为什么在 JS 里 ──
+ * 云浮起 → 袋鼠落到云上 → 触地时白丘被压出去一圈 → 文案逐条上浮，
+ * 整条时间线在 `components/motion/HomeMotion.tsx`（GSAP）。搬过去只为一件
+ * CSS 做不到的事：**触地那一帧的因果**。白丘的扩散和袋鼠的挤压要和落点对到
+ * ±30ms，纯 CSS 只能给两个元素各写一个 delay，改一处就得回头重算另一处。
+ *
+ * 常驻的横漂**没有**跟着搬 —— 它在 CSS 里零成本。两边能共存是因为：
+ * 这里用的是 `translate` **独立属性**，GSAP 写的是 `transform`，
+ * CSS Transforms L2 规定两者分开合成（translate → rotate → scale → transform），
+ * 所以是**叠加**而不是互相覆盖。云一边被 GSAP 抬起来、一边按自己的周期横漂。
+ * 别把这些 keyframes 改回 `transform:` 简写 —— 那样两边就开始抢同一个属性了。
  *
  * ── 无障碍 ──
  * 所有装饰性动画都关在 `prefers-reduced-motion: no-preference` 里，而**没有**用
@@ -17,40 +29,22 @@
  * 的揭示动画停在第一帧 —— 也就是 `opacity: 0`，整份列表在「减少动态」下直接消失。
  * 逐条 gate 麻烦一点，但不会把内容弄没。
  *
+ * 下面那组「首帧起点」也一并关在 no-preference 里，于是减少动态时它根本不成立，
+ * 首页内容一帧都不依赖 JS。
+ *
  * ── Lightning CSS 的坑（踩过一次，别再踩）──
  * 滚动驱动动画**必须写 longhand 并显式给 `animation-duration: auto`**，
  * 不能用 `animation: reveal linear both` 这种简写。简写省略时长拿到的是初始值 auto
  * （css-animations-2 专门为滚动驱动动画从 0s 改成了 auto），`pnpm dev` 下一切正常；
  * 但生产构建里 Tailwind v4 的 Lightning CSS 会把简写展开成 longhand 并把时长写成 0s，
  * 结果同上 —— 元素永远停在 opacity 0。dev 完全看不出来，改完必须跑
- * `pnpm build` + `next start` 复核。
+ * `pnpm build` + `next start` 复核。（当前这个文件里没有滚动驱动动画，
+ * 首页那段入场是 JS 驱动的，天然绕开这个坑。要加回来的话这条仍然算数。）
  */
 
 @media (prefers-reduced-motion: no-preference) {
   /* -------------------------------------------------------------------------
-   * 1 · 入场
-   *
-   * 编排顺序是有意的：先有天地（云浮起），主角再落到云上。
-   * 总时长压在 1.3s 以内 —— 再长就不是「到位」而是「等它演完」了。
-   * ---------------------------------------------------------------------- */
-
-  .sky__clouds {
-    animation: cloud-in 0.7s ease-out both;
-  }
-
-  .home__roo {
-    animation:
-      roo-drop 0.78s cubic-bezier(0.34, 1.32, 0.52, 1) 0.34s both,
-      roo-bob 4.6s ease-in-out 1.2s infinite;
-  }
-
-  /* 白丘跟着云一起浮起来，不然袋鼠落下时它已经在那儿等着了 */
-  .home__perch::before {
-    animation: cloud-in 0.7s ease-out both;
-  }
-
-  /* -------------------------------------------------------------------------
-   * 2 · 常驻
+   * 1 · 常驻
    * ---------------------------------------------------------------------- */
 
   /*
@@ -66,46 +60,53 @@
     transform-box: view-box;
     animation: cloud-drift var(--dur) ease-in-out infinite alternate;
   }
+
+  /* -------------------------------------------------------------------------
+   * 2 · 首页入场的首帧起点
+   *
+   * 只有起点在这里，动画在 `components/motion/HomeMotion.tsx`。
+   * 起点必须由 CSS 给出：GSAP 的 `set` 要等水合，那时首页已经以终态画过一帧，
+   * 直接设起点就是一次可见的闪回。
+   *
+   * 而 `opacity: 0` 一旦无条件写进 CSS，JS 挂掉的那一刻首页内容就永久消失了 ——
+   * 所以整组关在 `html[data-anim='js']` 下面，那个属性由
+   * `components/layout/motion-gate.tsx` 的内联脚本管：
+   *
+   *   （无 JS）  属性从未写上          → 这组规则不匹配，内容照常显示
+   *   'js'      脚本已跑、GSAP 未接手 → 起点成立，第一帧就是动画起点
+   *   'off'     水合超过 400ms        → 兜底放行，内容立刻显示、入场不再播
+   *   'run'     GSAP 已接手           → 改由它写的行内样式说话
+   *
+   * 每条都必须前缀 `.frame--home`：`.cloud__layer` 内页也有，
+   * `.home__main` / `.home__side` 分页页也有，而那些页面没有 HomeMotion 去接手，
+   * 少了前缀它们会白着到兜底计时为止。
+   *
+   * 文章流和分页刻意不在这一组里 —— 它们不参与入场（逐条揭示要监听滚动，
+   * 而这个站不监听滚动），所以一帧都不能藏。
+   * ---------------------------------------------------------------------- */
+
+  html[data-anim='js'] .frame--home .cloud__layer,
+  html[data-anim='js'] .frame--home .home__roo,
+  html[data-anim='js'] .frame--home .home__eyebrow,
+  html[data-anim='js'] .frame--home .lede__title,
+  html[data-anim='js'] .frame--home .lede__meta,
+  html[data-anim='js'] .frame--home .lede__summary,
+  html[data-anim='js'] .frame--home .lede__foot,
+  html[data-anim='js'] .frame--home .page__empty,
+  html[data-anim='js'] .frame--home .home__side > * {
+    opacity: 0;
+  }
+
+  /* 白丘是伪元素，GSAP 选不中，走父元素上这两个变量（见 site.css） */
+  html[data-anim='js'] .frame--home .home__perch {
+    --perch-o: 0;
+    --perch-s: 0.86;
+  }
 }
 
 /* ---------------------------------------------------------------------------
  * 关键帧
  * ------------------------------------------------------------------------ */
-
-@keyframes cloud-in {
-  from {
-    opacity: 0;
-    translate: 0 18%;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-
-@keyframes roo-drop {
-  from {
-    opacity: 0;
-    translate: 0 22%;
-    scale: 0.94;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-    scale: 1;
-  }
-}
-
-/* 呼吸。幅度用百分比，跟着袋鼠自己的高度走，大图小图幅度感一致 */
-@keyframes roo-bob {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -2.6%;
-  }
-}
 
 @keyframes cloud-drift {
   from {
@@ -117,7 +118,7 @@
 }
 
 /* ---------------------------------------------------------------------------
- * 微交互。这些是 transition 不是 animation，时长都在 250ms 以内，
+ * 3 · 微交互。这些是 transition 不是 animation，时长都在 250ms 以内，
  * 属于「按下去有反应」而不是装饰，所以不关在 reduced-motion 里。
  * ------------------------------------------------------------------------ */
 

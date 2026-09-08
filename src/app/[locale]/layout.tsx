@@ -7,6 +7,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import { LOCALES, site, type Locale } from '@config'
 
 import { absoluteUrl } from '@/lib/seo'
+import { MotionGateScript } from '@/components/layout/motion-gate'
 import { ThemeScript } from '@/components/layout/theme'
 
 import '@/styles/globals.css'
@@ -81,6 +82,8 @@ export default async function LocaleLayout({
       <body>
         {/* 必须是 body 的第一个子节点 —— 它要在页面内容被解析出来之前跑完，否则会闪一下浅色 */}
         <ThemeScript />
+        {/* 紧跟其后，同样要在内容解析之前跑完：它决定首页入场动画的起点成不成立 */}
+        <MotionGateScript />
         {children}
         <Analytics />
         <SpeedInsights />

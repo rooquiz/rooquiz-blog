@@ -153,6 +153,15 @@ a.card:hover {
   position: relative;
   display: flex;
   justify-content: flex-end;
+  /*
+   * 白丘的透明度与缩放走这两个变量，不直接写在 ::before 上：
+   * 入场（浮起）和触地那一下（被压得往外扩一圈）都由 GSAP 驱动，
+   * 而伪元素 GSAP 选不中，只能让它写父元素上的自定义属性、由 ::before 继承。
+   * 默认值就是终态 —— 没有 JS 时白丘照常在那儿。
+   * 见 components/motion/HomeMotion.tsx 与 motion.css 里那组「首帧起点」。
+   */
+  --perch-o: 1;
+  --perch-s: 1;
 }
 
 /*
@@ -173,6 +182,9 @@ a.card:hover {
   border-radius: 50%;
   background: var(--paper);
   filter: blur(12px);
+  /* 从丘心往外扩，默认原点（50% 50%）正是想要的 */
+  opacity: var(--perch-o);
+  scale: var(--perch-s);
 }
 
 .home__roo {

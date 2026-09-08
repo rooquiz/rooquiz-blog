@@ -207,18 +207,23 @@ Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区
 
 ### 动效
 
-全部集中在 `src/styles/motion.css`，一眼能看全这个站会动些什么。两类：
+分两处，界线是「要不要跨元素对时间」：
 
-| 类别 | 内容                                 |
-| ---- | ------------------------------------ |
-| 入场 | 云浮起 → 袋鼠落到云上（总长 < 1.2s） |
-| 常驻 | 三层云各自横漂、袋鼠呼吸             |
+| 归属                               | 内容                                                                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `components/motion/HomeMotion.tsx` | 首页入场：云分层浮起 → 袋鼠落座 → **触地那一帧**白丘被压出去一圈 → 文案与右栏逐条上浮 → 常驻呼吸；外加袋鼠的指针侧倾与点一下弹一跳 |
+| `src/styles/motion.css`            | 常驻的三层云横漂、全部微交互，以及首页入场的**首帧起点**                                                                           |
 
-外加几处微交互：商标里那颗袋鼠头在 hover 时轻轻一跳、明暗按钮的图标跟着转、
+首页那段搬去 GSAP 只为一件 CSS 做不到的事：白丘的扩散和袋鼠的挤压要和落点对到
+±30ms（实测在同一帧内完成），纯 CSS 只能给两个元素各写一个 delay，改一处就得
+回头重算另一处。常驻横漂没跟着搬 —— 它在 CSS 里零成本。
+
+微交互仍在 CSS 里：商标里那颗袋鼠头在 hover 时轻轻一跳、明暗按钮的图标跟着转、
 胶囊与圆按钮按下去有回弹。尾迹刻意不动 —— 一动它就变成装饰线，
 不再像是天上本来有的东西。
 
-装饰性动画一律关在 `prefers-reduced-motion: no-preference` 里。**没有**用常见的
+装饰性动画一律关在 `prefers-reduced-motion: no-preference` 里，**首帧起点也在里面** ——
+于是减少动态时首页一帧都不依赖 JS。**没有**用常见的
 `* { animation-duration: 0.01ms !important }` 全局兜底 —— 那条会把滚动驱动动画的
 活动时长归零、进度锁死在 0%，带 `fill-mode: both` 的揭示动画于是停在 `opacity: 0`。
 
@@ -259,6 +264,22 @@ Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区
 - **吉祥物走位图不走 SVG，并且用原生 `<img>` 不用 `next/image`**：
   理由分别写在 README 上面那节和 `components/brand/Roo.tsx` 顶部。
   文章配图仍然走 `next/image` —— 那些是运行时才知道尺寸的远端图。
+- **只有首页那段入场用 GSAP，别的动画都留在 CSS**：换来的是「触地的因果」——
+  袋鼠落到丘上那一帧，丘被压得往外扩一圈、袋鼠自己挤一下。这个要跨两个元素对时间，
+  CSS 只能各写 delay。代价是首页的 First Load JS 从 ~104kB 涨到 136kB
+  （gsap core 约 20kB gzip），只进首页 chunk，别把它引到别的路由去。
+  常驻横漂留在 CSS 是因为两边能共存：那些 keyframes 用的是 `translate` **独立属性**，
+  GSAP 写 `transform`，CSS Transforms L2 规定两者分开合成，所以是**叠加**不是互相覆盖
+  —— 别把 keyframes 改回 `transform:` 简写，那样就开始抢同一个属性了。
+- **入场动画的起点由 CSS 给、由一段内联脚本决定它成不成立**
+  （`components/layout/motion-gate.tsx` 写 `html[data-anim]`）：起点交给 `gsap.set`
+  就得等水合，那时首页已经以终态画过一帧，会看到闪回；而 `opacity: 0` 一旦无条件写进
+  CSS，JS 挂掉首页内容就永久消失。所以 `js` / `off` / `run` 三档 —— 无 JS 时属性从未
+  写上、规则不匹配；水合超过 400ms 由兜底计时放行，且 GSAP 后到时会读出 `off`
+  直接跳到终态，不会把已经露脸的内容重新藏起来。三条路径都用 CDP 逐帧取样验过。
+- **`HomeMotion` 的时间线必须带 `lazy: false`**：GSAP 默认惰性渲染 `fromTo` 的起点，
+  攒到下一个 ticker tick 才写，而放开 CSS 起点的那句 `data-anim = 'run'` 是同步的，
+  中间夹出一帧终态 —— 首页闪一下再被拽回起点。宽屏上多半采不到，390px 上稳定复现。
 - **滚动驱动动画必须写 longhand 并显式给 `animation-duration: auto`**，不能用
   `animation: reveal linear both` 这种简写。简写省略时长拿到的是初始值 `auto`
   （css-animations-2 专门为滚动驱动动画从 `0s` 改成了 `auto`），`pnpm dev` 下正常；

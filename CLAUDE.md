@@ -84,8 +84,28 @@ pnpm lint
   `.article__body` 顶到 672px，而窄屏那一列只有 335px，多出来的被
   `overflow-x: clip` 直接切掉。踩过一次。
 
-### 动效（`src/styles/motion.css`）
+### 动效（`src/styles/motion.css` + `src/components/motion/HomeMotion.tsx`）
 
+- **首页入场在 GSAP 里，其余动画在 CSS 里**，界线是「要不要跨元素对时间」。
+  搬过去只为一件事：袋鼠触地那一帧，白丘被压出去一圈、袋鼠自己挤一下 ——
+  两者要对到同一帧，CSS 只能各写 delay。**别把常驻横漂也搬进去**，它在 CSS 里零成本。
+- **两边能共存是因为属性不同**：`motion.css` 的 keyframes 用 `translate` **独立属性**，
+  GSAP 写 `transform`，CSS Transforms L2 规定两者分开合成（translate → rotate →
+  scale → transform），所以是**叠加**不是互相覆盖。**别把 keyframes 改回 `transform:`
+  简写** —— 那样两边就开始抢同一个属性，云会在入场第一帧跳掉一截。
+- **入场的起点写在 CSS 的 `html[data-anim='js']` 下面，不能写死也不能交给 JS**：
+  交给 `gsap.set` 要等水合，那时首页已经以终态画过一帧，会闪回；无条件写进 CSS 则
+  JS 一挂内容就永久消失。三档由 `components/layout/motion-gate.tsx` 那段内联脚本管
+  （`js` → `run`，超时 400ms 转 `off`），GSAP 读到 `off` 会直接跳终态。
+  **改这组规则时每条都要前缀 `.frame--home`** —— `.cloud__layer` 内页也有、
+  `.home__main` 分页页也有，那些页面没有 HomeMotion 去接手，少了前缀会白到兜底为止。
+- **时间线上 `lazy: false` 不能删**：GSAP 默认把 `fromTo` 的起点攒到下一个 ticker tick
+  才写，而放开 CSS 起点那句 `data-anim = 'run'` 是同步的，中间夹出一帧终态。
+  宽屏多半采不到，390px 稳定复现 —— 靠 CDP 逐帧取样才看得出来。
+- **袋鼠脚下那座白丘是伪元素，GSAP 选不中**，所以它的透明度和缩放走
+  `.home__perch` 上的 `--perch-o` / `--perch-s`（默认值就是终态）。
+- **云层的补间要 `force3D: false`**：默认 `"auto"` 会临时提升到 GPU，
+  而那三层挂着 feGaussianBlur，提升后滤镜按低分辨率栅格化，Safari 上云边闪马赛克。
 - **滚动驱动动画必须写 longhand 并显式给 `animation-duration: auto`**，绝不能用
   `animation: reveal linear both` 简写。简写省略时长拿到的是初始值 `auto`，dev 下正常；
   但生产构建里 Lightning CSS 会把它展开成 longhand 并写成 `0s`，进度锁死在 0%，
