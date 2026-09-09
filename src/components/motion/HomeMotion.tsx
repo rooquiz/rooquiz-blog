@@ -36,14 +36,18 @@ import { gsap } from 'gsap'
 /**
  * 三层云的入场位移，单位是云画布的 user unit（viewBox 1512×340，见 Clouds.tsx）。
  * 按 DOM 顺序：远层 → 中层 → 纸色层，**越近走得越多**，抬起来才有纵深。
- * 三层同幅同步平移试过（现在 CSS 里那条 `cloud-in` 就是抬整个 `<svg>`），
+ * 三层同幅同步平移试过（早先 CSS 里那条 `cloud-in` 就是抬整个 `<svg>`），
  * 读作一块板在上移，三层辛苦拉开的纵深全白费。
  *
  * 用 user unit 不用 `yPercent`：这套坐标和云自己同一套，任何视口下构图一致；
  * `yPercent` 走的是各层自己的包围盒，三层的盒不一样大，幅度会各不相同 ——
  * 和 `.cloud__layer` 上那条 `transform-box: view-box` 防的是同一件事。
+ *
+ * **上限 36，别再调大**：最前那层是纸色的，它的基座矩形从 y=304 铺到 380，
+ * 而画布底边（= 天与纸的交界）在 340 —— 往下挪超过 36 个单位，基座顶边就跌到
+ * 340 以下，那条交界线当场露出来，成了一道横贯全宽的硬边。26 留了 14 单位余量。
  */
-const CLOUD_RISE = [22, 32, 44]
+const CLOUD_RISE = [16, 22, 26]
 
 /** 袋鼠离手的时刻 */
 const DROP = 0.28
@@ -112,14 +116,18 @@ export function HomeMotion() {
 
       if (fresh) {
         /*
-         * 1 · 云浮起。`force3D: false` 不能删：GSAP 默认的 `"auto"` 会在补间期间
+         * 1 · 云浮起。**只升，不淡入** —— 淡入过一版，那 0.6 秒里三层云全透明，
+         * 天与纸之间那条本该被纸色云盖住的交界当场露出来，是一道横贯全宽的直边，
+         * 线下还压着一块空白，整个读作「页面没加载完」。云可以动，但不能不在。
+         *
+         * `force3D: false` 不能删：GSAP 默认的 `"auto"` 会在补间期间
          * 临时加 `translate3d` 把图层提升到 GPU，而这三层身上挂着 feGaussianBlur ——
          * 提升后滤镜按低分辨率栅格化，Safari 上表现是云边一闪的马赛克。
          */
         tl.fromTo(
           q('.cloud__layer'),
-          { opacity: 0, y: (i: number) => CLOUD_RISE[i] },
-          { opacity: 1, y: 0, duration: 0.62, stagger: 0.07, force3D: false },
+          { y: (i: number) => CLOUD_RISE[i] },
+          { y: 0, duration: 0.62, stagger: 0.07, force3D: false },
           0,
         )
 
@@ -154,25 +162,13 @@ export function HomeMotion() {
         tl.to(perch, { '--perch-s': 1, duration: 0.42 }, LAND + 0.1)
 
         /*
-         * 5 · 文案。眉标 → 标题 → 日期 → 摘要 → 继续读，逐条上浮。
-         * 选择器一次给全、按 DOM 顺序 stagger；`.lede__summary` 可能不存在
-         * （文章没写摘要），`.page__empty` 是一篇都没有时的替补，都跟着这一串走。
-         * 文章流和分页刻意不参与 —— 它们大半在折叠以下，逐条揭示要滚动监听，
-         * 而这个站不监听滚动（见 README）。
+         * 5 · 到此为止 —— **正文与右栏不参与入场**，它们从第一帧就在那儿。
+         *
+         * 头条那几行逐条上浮试过一版：文章流不在 gate 里（它大半在折叠以下，
+         * 逐条揭示要监听滚动，而这个站不监听滚动），于是有半秒钟「第一篇是空的、
+         * 第二篇却好好地摆在下面」，中间一块两百多像素的白 —— 读者读作页面坏了，
+         * 不是读作动画。装饰可以慢慢到位，读物不能。
          */
-        tl.fromTo(
-          q('.home__eyebrow, .lede__title, .lede__meta, .lede__summary, .lede__foot, .page__empty'),
-          { opacity: 0, y: 10 },
-          { opacity: 1, y: 0, stagger: 0.07 },
-          0.34,
-        )
-
-        /*
-         * 6 · 右栏三块。只按「块」错峰，不再往里给胶囊单独 stagger ——
-         * 胶囊自己淡入时外面那层 section 也在淡入，两层透明度相乘，
-         * 那一小片会糊成一团。
-         */
-        tl.fromTo(q('.home__side > *'), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.06 }, 0.62)
       }
 
       tl.call(() => bob.play(), undefined, fresh ? SETTLE : 0)

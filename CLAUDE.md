@@ -101,6 +101,13 @@ pnpm lint
   GSAP 写 `transform`，CSS Transforms L2 规定两者分开合成（translate → rotate →
   scale → transform），所以是**叠加**不是互相覆盖。**别把 keyframes 改回 `transform:`
   简写** —— 那样两边就开始抢同一个属性，云会在入场第一帧跳掉一截。
+- **云是「升起」不能是「淡入」，位移上限 36 个 viewBox 单位**：最前那层是纸色的，
+  基座从 y=304 铺到 380，而画布底边（天与纸的交界）在 340 —— 一透明、或往下挪超过
+  36，那条交界当场露成一道横贯全宽的硬边，线下一块空白，整屏读作「没加载完」。
+  `CLOUD_RISE`（HomeMotion.tsx）和 motion.css 里那三条 `translateY` 是一对。
+- **正文一个字都不许进入场**：头条、文章流、右栏必须第一帧就在。头条逐条上浮试过，
+  文章流不参与入场，于是半秒钟「第一篇空着、第二篇好好摆在下面」，中间两百多像素的白。
+  会动的只有天上那些装饰（云、袋鼠、白丘）。
 - **入场的起点写在 CSS 的 `html[data-anim='js']` 下面，不能写死也不能交给 JS**：
   交给 `gsap.set` 要等水合，那时首页已经以终态画过一帧，会闪回；无条件写进 CSS 则
   JS 一挂内容就永久消失。三档由 `components/layout/motion-gate.tsx` 那段内联脚本管

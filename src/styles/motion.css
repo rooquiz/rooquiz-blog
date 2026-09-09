@@ -81,20 +81,41 @@
    * `.home__main` / `.home__side` 分页页也有，而那些页面没有 HomeMotion 去接手，
    * 少了前缀它们会白着到兜底计时为止。
    *
-   * 文章流和分页刻意不在这一组里 —— 它们不参与入场（逐条揭示要监听滚动，
-   * 而这个站不监听滚动），所以一帧都不能藏。
+   * **正文一个字都不在这一组里**：头条、文章流、右栏从第一帧就在那儿。
+   * 头条那几行逐条上浮试过一版 —— 文章流不参与入场（逐条揭示要监听滚动，
+   * 而这个站不监听滚动），于是有半秒钟「第一篇是空的、第二篇却好好地摆在下面」，
+   * 中间一块两百多像素的白。装饰可以慢慢到位，读物不能。
    * ---------------------------------------------------------------------- */
 
-  html[data-anim='js'] .frame--home .cloud__layer,
-  html[data-anim='js'] .frame--home .home__roo,
-  html[data-anim='js'] .frame--home .home__eyebrow,
-  html[data-anim='js'] .frame--home .lede__title,
-  html[data-anim='js'] .frame--home .lede__meta,
-  html[data-anim='js'] .frame--home .lede__summary,
-  html[data-anim='js'] .frame--home .lede__foot,
-  html[data-anim='js'] .frame--home .page__empty,
-  html[data-anim='js'] .frame--home .home__side > * {
+  /* 袋鼠是从上方落下来的，落之前它不该在那儿 */
+  html[data-anim='js'] .frame--home .home__roo {
     opacity: 0;
+  }
+
+  /*
+   * 云的起点是**位移**，不是透明度。
+   *
+   * 三层一起淡入试过，是个真事故：最前那层是纸色的，天与纸的交界全靠它盖住，
+   * 一透明就露出 `.sky` 那条矩形底边 —— 一道横贯全宽的直线，线下还压着一块空白，
+   * 整屏读作「没加载完」。云可以动，但任何一帧都不能不在。
+   *
+   * 三个值和 `HomeMotion.tsx` 的 `CLOUD_RISE` 是一对，改一个要改两个；
+   * 上限 36（纸色层基座顶边 304 + 36 = 340，正好是画布底边），别超。
+   *
+   * 用 `transform` 不用 `translate`：横漂那条 keyframes 占着 `translate`，
+   * 两者分开合成、互不覆盖，而 `transform` 正是 GSAP 接手后写的那个属性。
+   * `nth-of-type` 数的是同类型兄弟，`<defs>` 不算在内，所以就是三层云本身。
+   */
+  html[data-anim='js'] .frame--home .cloud__layer:nth-of-type(1) {
+    transform: translateY(16px);
+  }
+
+  html[data-anim='js'] .frame--home .cloud__layer:nth-of-type(2) {
+    transform: translateY(22px);
+  }
+
+  html[data-anim='js'] .frame--home .cloud__layer:nth-of-type(3) {
+    transform: translateY(26px);
   }
 
   /* 白丘是伪元素，GSAP 选不中，走父元素上这两个变量（见 site.css） */
