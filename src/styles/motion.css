@@ -93,30 +93,16 @@
   }
 
   /*
-   * 云的起点是**位移**，不是透明度。
+   * **云不在这一组里，它不参与入场。** 那片天从第一帧起就是成品。
    *
-   * 三层一起淡入试过，是个真事故：最前那层是纸色的，天与纸的交界全靠它盖住，
-   * 一透明就露出 `.sky` 那条矩形底边 —— 一道横贯全宽的直线，线下还压着一块空白，
-   * 整屏读作「没加载完」。云可以动，但任何一帧都不能不在。
+   * 试过两版都退了：先是三层一起淡入 —— 最前那层是纸色的、天与纸的交界全靠它盖住，
+   * 一透明就露出 `.sky` 那条矩形底边，一道横贯全宽的直线。改成只做位移之后交界
+   * 不再露，但宽屏上另一个问题浮出来：云的画布是横向拉伸的，2000px 宽的屏上
+   * 每团云被拉成扁而阔的椭圆，整条云带本身就是一大片软过渡；再让这片过渡整体
+   * 上移，中段就是一整块白在缓慢挪动。天空是背景，不是演员。
    *
-   * 三个值和 `HomeMotion.tsx` 的 `CLOUD_RISE` 是一对，改一个要改两个；
-   * 上限 36（纸色层基座顶边 304 + 36 = 340，正好是画布底边），别超。
-   *
-   * 用 `transform` 不用 `translate`：横漂那条 keyframes 占着 `translate`，
-   * 两者分开合成、互不覆盖，而 `transform` 正是 GSAP 接手后写的那个属性。
-   * `nth-of-type` 数的是同类型兄弟，`<defs>` 不算在内，所以就是三层云本身。
+   * 云唯一的动作是常驻横漂（上面那条 `cloud-drift`），它不改变构图，只让天活着。
    */
-  html[data-anim='js'] .frame--home .cloud__layer:nth-of-type(1) {
-    transform: translateY(16px);
-  }
-
-  html[data-anim='js'] .frame--home .cloud__layer:nth-of-type(2) {
-    transform: translateY(22px);
-  }
-
-  html[data-anim='js'] .frame--home .cloud__layer:nth-of-type(3) {
-    transform: translateY(26px);
-  }
 
   /* 白丘是伪元素，GSAP 选不中，走父元素上这两个变量（见 site.css） */
   html[data-anim='js'] .frame--home .home__perch {
