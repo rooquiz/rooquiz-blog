@@ -43,6 +43,18 @@
   --cloud-mid: #ecf7fe;
   --cloud-mid-lo: #d9edfd;
   --cloud-fore-lo: #f2f9fe;
+  /*
+   * 单独漂浮那几朵小云的上下两档（见 Clouds.tsx 的 FLOATERS）。
+   * 不直接复用远层那对 `--cloud-back` / `--cloud-back-lo`：背光档 #c2e4fe 的亮度
+   * 和它所在高度的天几乎相同（222.6 对 223），大片云海无所谓（背光只出现在
+   * 团与团的交界），可孤立的小团有一半面积就是背光，那一半直接溶进天里 ——
+   * 实测整朵只剩 +1.4/255 的对比。这里两档相对那片天分别是 +26 和 +14。
+   *
+   * **hi 是受光的顶、lo 是背光的底**，暗色下这两个值要对调：夜里三层的亮度关系
+   * 整体翻转（见下面暗色那块的说明），照抄浅色的话光就变成从下面来的。
+   */
+  --cloud-float-hi: var(--cloud-mid);
+  --cloud-float-lo: var(--cloud-back);
 
   /* ---- 内容区 ---- */
   --paper: #ffffff;
@@ -206,6 +218,9 @@
   --cloud-mid: #201e45;
   --cloud-mid-lo: #191735;
   --cloud-fore-lo: #0d0c20;
+  /* 对调：夜里 --cloud-back 才是亮的那一档，受光的顶要用它 */
+  --cloud-float-hi: var(--cloud-back);
+  --cloud-float-lo: var(--cloud-mid);
 
   --paper: #12112a;
   --surface: #1c1a38;

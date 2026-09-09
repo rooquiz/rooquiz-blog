@@ -137,6 +137,76 @@ const LAYERS: { fill: string; shade: string; base: number; drift: number; durati
 ]
 
 /**
+ * 几朵单独漂浮的小云，排在三层云带**上方那片空天**里（cy 40–75，都在中段天际线
+ * 之上），画在三层之后面 —— 于是它飘过塔顶时是被云带挡住的，读作更远处的云。
+ *
+ * 和三层云带的关键差别是**它们可以单向循环**。云带只能 `alternate` 来回摆，因为
+ * 满幅图形首尾接不上（见 motion.css 里 `cloud-drift` 的说明）；而孤立的小团起点和
+ * 终点都在画布之外、`.sky` 又是 `overflow: hidden`，所以回绕那一瞬看不见 ——
+ * 这才是真的「飘过去」，不是「来回晃」。
+ *
+ * 每朵的横移区间由自己的 `cx` 算出来（见下面的 `--x-from` / `--x-to`）：
+ * 从完全飘出左边到完全飘出右边。这样**关掉动画时它就停在 `cx` 上**，
+ * 减少动态偏好下是三朵散在天上的云，而不是挤在左边缘的一堆。
+ *
+ * `phase` 是负延迟的比例，两个作用：把三朵的相位错开（否则它们排成一列同步平移），
+ * 以及让**页面刚打开时三朵都在天上**。算法是
+ * `phase = (想要的绝对 x − cx − x_from) / (x_to − x_from)`，
+ * 现在这三个值对应初始落点约 300 / 820 / 1250。
+ * 周期都在 80–150s：这是背景里的云，慢到读者不会盯着它看。
+ *
+ * 只有首页那片满高的天有它们。内页的取景框从 y=150 开窗（见 LOW_BAND），
+ * 而它们全在 100 以上，天然落在窗外。
+ *
+ * 每朵各自一个滤镜组，不要合成一个 —— 滤镜会让整组的包围盒每帧重绘，
+ * 合起来那个盒子横跨整张画布，白白多出一大片持续重绘的区域。
+ */
+const FLOATERS: {
+  cx: number
+  cy: number
+  lobes: [number, number, number][]
+  dur: string
+  phase: number
+  reverse?: boolean
+}[] = [
+  {
+    cx: 430,
+    cy: 54,
+    lobes: [
+      [-42, 8, 29],
+      [0, -8, 38],
+      [36, 10, 26],
+    ],
+    dur: '96s',
+    phase: 0.28,
+  },
+  {
+    cx: 880,
+    cy: 72,
+    lobes: [
+      [-50, 10, 35],
+      [-4, -13, 47],
+      [45, 12, 31],
+    ],
+    dur: '148s',
+    /* 唯一一朵往左飘的。和中层云带的漂移同向，右飘的两朵于是有了参照，读出视差 */
+    reverse: true,
+    phase: 0.47,
+  },
+  {
+    cx: 1210,
+    cy: 40,
+    lobes: [
+      [-29, 6, 20],
+      [0, -7, 27],
+      [27, 8, 18],
+    ],
+    dur: '78s',
+    phase: 0.74,
+  },
+]
+
+/**
  * 内页那条矮云用的取景框。**不是把整幅云压扁**，而是只开一扇窗看它的下半截 ——
  * `preserveAspectRatio="none"` 会按盒子高度纵向缩放，340 单位塞进 150px 的话
  * 每一团云都被压成扁椭圆，一排下来读作「一串气泡」而不是云。
@@ -162,6 +232,15 @@ export function Clouds({ className, band = 'full' }: { className?: string; band?
          */}
         <filter id="cloud-soft" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="3" />
+        </filter>
+
+        {/*
+         * 漂浮那几朵用更小的 σ。σ=3 是按云带那些半径 90–110 的大团定的，
+         * 用在半径 20–45 的小团上，柔化的比例是它的四五倍 —— 整朵被抹成一团雾，
+         * 轮廓全没了。2 对小团大致相当于大团用 3 的观感。
+         */}
+        <filter id="cloud-soft-sm" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2" />
         </filter>
 
         {/*
@@ -192,6 +271,25 @@ export function Clouds({ className, band = 'full' }: { className?: string; band?
         </linearGradient>
 
         {/*
+         * 漂浮那几朵的填充。上亮下暗和云带同一个idiom（objectBoundingBox，
+         * 每个圆各拿一份从顶到底的渐变，交叠处界线自己浮出来）。
+         *
+         * **但两档都必须取在天的亮度之上**，不能直接复用远层那份渐变：
+         * 远层的背光档 `--cloud-back-lo` (#c2e4fe) 亮度 222.6，而它所在高度的天是
+         * 223 —— 对大片云海无所谓（背光只出现在团与团的交界），可孤立的小团有一半
+         * 面积就是背光，那一半直接溶进天里，实测整朵只剩 +1.4/255 的对比。
+         * 现在走 `--cloud-float-hi` / `--cloud-float-lo` 两个 token（定义与取值理由
+         * 在 tokens.css），相对那片天分别是 +26 和 +14，两半都看得见。
+         * 那两个 token 在暗色下是对调的 —— 夜里三层的亮度关系整体翻转，
+         * 照抄浅色的顺序光就变成从下面来的。
+         */}
+        <linearGradient id="cloud-float-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--cloud-float-hi)" />
+          <stop offset="55%" stopColor="var(--cloud-float-hi)" />
+          <stop offset="100%" stopColor="var(--cloud-float-lo)" />
+        </linearGradient>
+
+        {/*
          * 每团云自己的明暗。gradientUnits 用默认的 objectBoundingBox，
          * 于是每个 circle 各拿一份从顶到底的渐变 —— 交叠处两团的明暗对不上，
          * 界线就自己浮出来了，不用画一根线。
@@ -209,6 +307,28 @@ export function Clouds({ className, band = 'full' }: { className?: string; band?
           </linearGradient>
         ))}
       </defs>
+
+      {band === 'full' &&
+        FLOATERS.map(f => (
+          <g
+            key={f.cx}
+            className="cloud__float"
+            filter="url(#cloud-soft-sm)"
+            style={
+              {
+                /* 从完全飘出一侧到完全飘出另一侧；260 是留给自身半宽加模糊的余量 */
+                '--x-from': f.reverse ? 1512 - f.cx + 260 : -(f.cx + 260),
+                '--x-to': f.reverse ? -(f.cx + 260) : 1512 - f.cx + 260,
+                '--dur': f.dur,
+                '--delay': `calc(${f.dur} * -${f.phase})`,
+              } as CSSProperties
+            }
+          >
+            {f.lobes.map(([dx, dy, r]) => (
+              <circle key={`${dx}-${dy}`} cx={f.cx + dx} cy={f.cy + dy} r={r} fill="url(#cloud-float-fill)" />
+            ))}
+          </g>
+        ))}
 
       {LAYERS.map((layer, i) => (
         <g

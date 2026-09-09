@@ -61,6 +61,24 @@
     animation: cloud-drift var(--dur) ease-in-out infinite alternate;
   }
 
+  /*
+   * 单独漂浮的那几朵小云（见 Clouds.tsx 的 FLOATERS）。
+   *
+   * 和上面云带那条不同，这里是 **`infinite` 单向循环，没有 `alternate`** ——
+   * 起点和终点都在画布之外，`.sky` 又裁掉了溢出，所以回绕那一瞬看不见，
+   * 读作真的飘过去。云带做不到这件事：满幅图形首尾接不上。
+   *
+   * `linear` 不加 ease：云不会在天边加速减速，一有缓动就露出「这是个动画」。
+   * 负延迟（`--delay`）把三朵的相位错开，否则它们排成一列同步平移。
+   *
+   * `transform-box: view-box` 同样不能删，理由和云带那条一样。
+   */
+  .cloud__float {
+    transform-box: view-box;
+    animation: cloud-float var(--dur) linear infinite;
+    animation-delay: var(--delay);
+  }
+
   /* -------------------------------------------------------------------------
    * 2 · 首页入场的首帧起点
    *
@@ -115,6 +133,15 @@
 /* ---------------------------------------------------------------------------
  * 关键帧
  * ------------------------------------------------------------------------ */
+
+@keyframes cloud-float {
+  from {
+    translate: calc(var(--x-from) * 1px) 0;
+  }
+  to {
+    translate: calc(var(--x-to) * 1px) 0;
+  }
+}
 
 @keyframes cloud-drift {
   from {
