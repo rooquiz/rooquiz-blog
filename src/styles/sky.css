@@ -97,12 +97,31 @@
 }
 
 /*
- * 内页的云不按比例缩，而是写死一个高度，配 Clouds 的 band="low" 取景框 ——
- * 那扇窗正好是 190 个 viewBox 单位，所以这里也必须是 11.875rem，纵向才是 1:1。
- * 两个数是一对，改一个要改两个（见 Clouds.tsx 的 LOW_BAND）。
+ * 内页的云不按 --hero-h 取比例，而是自己一条（取值与理由见 tokens.css 的
+ * --cloud-h-sm）：它要和 Clouds 的 band="low" 取景框对上 —— 那扇窗是 190 个
+ * viewBox 单位，云带高度按同样的比例走，纵向才是 1:1。
  */
 .sky--short {
-  --cloud-h: 11.875rem;
+  --cloud-h: var(--cloud-h-sm);
+}
+
+/*
+ * 矮云带的**顶边要渐隐**。
+ *
+ * `band="low"` 是在 y=150 处开一扇窗，而裁剪只会露出云团的**内部**，不会产生轮廓 ——
+ * 那条线上 83% 的宽度都被云团覆盖，于是裁出来就是一道横贯全宽的直线，
+ * 实测 28/255（11%），1440 / 2000 / 2560 上都一样。原注释以为「从 150 开窗，
+ * 基座那条边被上方那排云团盖住，露出来的才是起伏的天际线」—— 那是不成立的，
+ * 换成哪个 y 开窗都一样，除非那个高度几乎没有云。
+ *
+ * 用 CSS 的 mask 而不是 SVG 里的 `<mask>`：渐隐要化到**透明**（好让底下那片天的
+ * 渐变透出来），而 SVG 里没法引用 CSS 的 `linear-gradient`；而且 CSS mask 少一次
+ * 离屏合成。3rem 是量出来的最小可用值 —— 再短那条线还看得出来。
+ * 只作用在顶部，底边仍然是完全不透明的纸色（那是收底纱的活，见 Clouds.tsx）。
+ */
+.sky--short .sky__clouds {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 3rem);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 3rem);
 }
 
 /* 飞机尾迹。排在天的上半段，和云不重叠 */
