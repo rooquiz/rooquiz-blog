@@ -107,6 +107,15 @@ const LAYERS: { fill: string; shade: string; base: number; drift: number; durati
     lobes: [
       [86, 92, 64, 87],
       [172, 196, 72, 100],
+      /*
+       * 这两团是补上去堵缝的，别删。基座矩形从 y=304 起，而上面那两团塔基的下沿
+       * 分别停在 179 和 296 —— x 小于 185 单位的那一段没有任何云团跨过 304，
+       * 基座的直角上边就直接露出来，是一道 8 级灰阶的笔直横线（2000px 宽的屏上
+       * 落在 y≈610，实测 244 → 252）。要判断某团云有没有盖住 304，
+       * 看 `cy − ry ≤ 304 ≤ cy + ry`。
+       */
+      [40, 300, 110],
+      [150, 316, 100],
       [258, 248, 92],
       [330, 318, 100],
       [410, 372, 100],
@@ -156,12 +165,40 @@ export function Clouds({ className, band = 'full' }: { className?: string; band?
         </filter>
 
         {/*
+         * 收底纱。**不是装饰，是修接缝的。**
+         *
+         * 云团各自的明暗渐变（下面那组 cloud-lobe-*）在 78% 处是背光档，而底部那些
+         * 云团的包围盒大半在画布之外，露出来的正好是还没回到本色的那一段 ——
+         * 于是画布底边被裁开时，上面是 246–253、下面是纯白纸面，一道 6 级灰阶的
+         * 笔直横线横贯全宽。灰阶差很小，但直边最容易被眼睛抓住（马赫带）。
+         *
+         * 这层纱从 y=264 的全透明渐变到 **y=336** 的纸色不透明（不是 340）：
+         * 渐变必须在画布底边**之前**就到满，最后那几个单位要是实心纸色。
+         * 写成 341 试过 —— 可见的最后一行只到 0.97 不透明，底下的云色还透出 3%，
+         * 于是纸面线上仍留着 1 级灰阶的一道线。梯度之外靠 spreadMethod 的默认
+         * pad 续成实色，所以 336 到 384 那一段是纯 --paper。
+         *
+         * 于是最后几行严格等于 --paper，与正文底色完全连续，接缝在数学上消失。
+         * 代价是云带最下面那 77 个单位被抹平 —— 那一段实测本来就是一片
+         * 246→253 的平坦色块，没有形状信息，抹掉不损失任何东西。
+         *
+         * `gradientUnits="userSpaceOnUse"`：y 要按 viewBox 单位算，不是按矩形自己的
+         * 包围盒 —— 内页那条矮云（band="low"）用的是同一张画布的下半截，
+         * 两者必须落在同一个绝对高度上。
+         */}
+        <linearGradient id="cloud-hem" gradientUnits="userSpaceOnUse" x1="0" y1="264" x2="0" y2="336">
+          <stop offset="0%" stopColor="var(--paper)" stopOpacity="0" />
+          <stop offset="100%" stopColor="var(--paper)" stopOpacity="1" />
+        </linearGradient>
+
+        {/*
          * 每团云自己的明暗。gradientUnits 用默认的 objectBoundingBox，
          * 于是每个 circle 各拿一份从顶到底的渐变 —— 交叠处两团的明暗对不上，
          * 界线就自己浮出来了，不用画一根线。
          *
          * 收尾那一档必须回到 fill 本色：云团的下半截压在同色的基座矩形上，
-         * 停在 shade 的话会在圆的下缘切出一道弧。
+         * 停在 shade 的话会在圆的下缘切出一道弧。**但底部那些云团的包围盒大半在
+         * 画布之外，露出来的是还没回到本色的那一段** —— 这就是要有收底纱的原因。
          */}
         {LAYERS.map((layer, i) => (
           <linearGradient key={layer.fill} id={`cloud-lobe-${i}`} x1="0" y1="0" x2="0" y2="1">
@@ -187,6 +224,9 @@ export function Clouds({ className, band = 'full' }: { className?: string; band?
           ))}
         </g>
       ))}
+
+      {/* 收底纱压在最后，且不进滤镜组 —— 它要的是干净的渐变，不需要软边 */}
+      <rect x={-200} y={264} width={1912} height={120} fill="url(#cloud-hem)" />
     </svg>
   )
 }
