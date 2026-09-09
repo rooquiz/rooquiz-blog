@@ -107,7 +107,8 @@
   /* 白丘是伪元素，GSAP 选不中，走父元素上这两个变量（见 site.css） */
   html[data-anim='js'] .frame--home .home__perch {
     --perch-o: 0;
-    --perch-s: 0.86;
+    /* 和 HomeMotion.tsx 里白丘那条 fromTo 的起点是一对，两处必须一致 */
+    --perch-s: 0.9;
   }
 }
 
