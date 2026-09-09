@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { site, type Locale } from '@config'
+import { site } from '@config'
 
-import { localePath } from '@/lib/content'
-import { t } from '@/lib/i18n'
+import { sitePath } from '@/lib/routes'
+import { copy } from '@/lib/i18n'
 import { ArrowRightIcon, MailIcon } from '@/components/layout/Icons'
 
 /**
@@ -16,9 +16,7 @@ import { ArrowRightIcon, MailIcon } from '@/components/layout/Icons'
  */
 const MAX_CATEGORIES = 10
 
-export function CategoryRail({ tags, locale }: { tags: { tag: string; count: number }[]; locale: Locale }) {
-  const copy = t(locale)
-
+export function CategoryRail({ tags }: { tags: { tag: string; count: number }[] }) {
   return (
     <aside className="home__side">
       {tags.length > 0 && (
@@ -26,14 +24,14 @@ export function CategoryRail({ tags, locale }: { tags: { tag: string; count: num
           <h2 className="u-eyebrow">{copy.browseByCategory}</h2>
           <div className="side__chips">
             {tags.slice(0, MAX_CATEGORIES).map(({ tag, count }) => (
-              <Link key={tag} href={localePath(locale, 'tags', tag)} className="chip">
+              <Link key={tag} href={sitePath('tags', tag)} className="chip">
                 {tag}
                 <span className="chip__count">{count}</span>
               </Link>
             ))}
           </div>
           {tags.length > MAX_CATEGORIES && (
-            <Link href={localePath(locale, 'tags')} className="u-more mt-4 text-[var(--fs-small)]">
+            <Link href={sitePath('tags')} className="u-more mt-4 text-[var(--fs-small)]">
               {copy.allCategories}
               <ArrowRightIcon />
             </Link>
@@ -48,7 +46,7 @@ export function CategoryRail({ tags, locale }: { tags: { tag: string; count: num
          * 整张卡就是那条 RSS 链接，不再在卡里另放一行「拿走 RSS 地址」——
          * 卡里只有一句话，再挂一个行内链接会让人以为卡本身不可点。
          */}
-        <Link href={localePath(locale, 'feed.xml')} className="side__card side__card--action">
+        <Link href={sitePath('feed.xml')} className="side__card side__card--action">
           <span className="side__icon">
             <MailIcon />
           </span>

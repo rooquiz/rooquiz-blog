@@ -117,7 +117,6 @@ if (existing?.content_hash === contentHash) return { changed: false }
     headers: auth,
     body: JSON.stringify({
       slug: SLUG,
-      locale: 'en',
       translationKey: TRANSLATION_KEY,
       title: 'Hello from the publishing API',
       summary: '一篇通过 HTTP 接口写入的测试文章，用来验证 Storage、Postgres、配图与构建期同步这条完整链路。',

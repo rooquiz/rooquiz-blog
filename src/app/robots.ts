@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       // 搜索页与临时验证页不该被抓
-      disallow: ['/en/search', '/zh/search', '/en/kitchen-sink', '/zh/kitchen-sink'],
+      disallow: ['/search', '/kitchen-sink'],
     },
     sitemap: absoluteUrl('/sitemap.xml'),
   }

@@ -227,8 +227,16 @@ pnpm lint
     printf '%s → %s\n' "$u" "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8200$u)"
   done   # 出现 400/404 就是这个坑，清 .next 重新 build 再重启
   ```
-- **站内路径统一用 `localePath()`**（`src/lib/content/index.ts`），别手拼字符串
-  —— 丢了 locale 前缀就是 404。
+- **站点只支持英文，没有语言前缀**。早先是 en / zh 双语（路由 `/[locale]`、middleware 分流、
+  hreflang、按语言分词的搜索索引），中文从未发布过内容，整套已移除。理由与保留项见
+  README「只支持英文」一节。**数据层没动**：Postgres 的 `locale` 列、Storage 的
+  `posts/en/` 前缀都还在，写入端一律写 `CONTENT_LOCALE`（恒为 `'en'`）——
+  改前缀就得给已有对象改名。
+- **站内路径统一用 `sitePath()`，而它在 `src/lib/routes.ts`，不在 `lib/content`**。
+  这个分家是必须的：`lib/content` 会读 `.content/index.json`、因此 import 了 `node:fs`，
+  客户端组件（搜索结果那几条链接）只要从那里取一个纯字符串函数，webpack 就会把
+  `node:fs` 拖进浏览器 bundle，构建直接失败（`UnhandledSchemeError`）。踩过一次。
+  **别在 `lib/content` 里给 `sitePath` 留 re-export** —— 留个转发口就等着下次再踩。
 - **Storage key 前缀只有一个来源**：`src/lib/content/paths.ts` 的
   `postObjectPath()` / `mediaObjectPrefix()`，签发端与读取端共用。
 - **`src/lib/supabase/admin.ts` 带 `server-only`**，别在组件里 import。

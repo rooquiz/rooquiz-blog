@@ -1,8 +1,7 @@
 import Link from 'next/link'
-import type { Locale } from '@config'
 
-import { localePath } from '@/lib/content'
-import { t } from '@/lib/i18n'
+import { sitePath } from '@/lib/routes'
+import { copy } from '@/lib/i18n'
 import { ArrowLeftIcon, ArrowRightIcon } from '@/components/layout/Icons'
 
 /**
@@ -12,11 +11,10 @@ import { ArrowLeftIcon, ArrowRightIcon } from '@/components/layout/Icons'
  * 到头的那一侧渲染成 aria-disabled 的 <span> 而不是直接不渲染 ——
  * 保持左右两枚的位置，翻页时中间那个「3 / 7」不会左右跳。
  */
-export function Pager({ locale, current, total }: { locale: Locale; current: number; total: number }) {
+export function Pager({ current, total }: { current: number; total: number }) {
   if (total <= 1) return null
 
-  const copy = t(locale)
-  const pageHref = (n: number) => (n === 1 ? localePath(locale) : localePath(locale, 'page', String(n)))
+  const pageHref = (n: number) => (n === 1 ? sitePath() : sitePath('page', String(n)))
 
   return (
     <nav className="pager">

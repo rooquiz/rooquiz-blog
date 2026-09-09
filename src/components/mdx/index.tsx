@@ -22,7 +22,7 @@ function Anchor({ href = '', children, ...props }: ComponentPropsWithoutRef<'a'>
     )
   }
 
-  // 站内相对链接必须自带 locale 前缀（作者在 MDX 里写 /en/xxx）。
+  // 站内相对链接：作者在 MDX 里直接写 /my-post（去掉多语言后不再有 locale 前缀）。
   // 这里不做自动补全：补错了比 404 更难查，交给写入 API 校验更合适。
   return (
     <Link href={href} {...props}>

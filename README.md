@@ -25,7 +25,7 @@ Vercel Build
 ```
 
 只有四个端点是动态的：`/api/posts`、`/api/deploy`、`/api/media/upload-url`、
-`/api/views/[locale]/[slug]`。其余全部 `force-static`。
+`/api/views/[slug]`。其余全部 `force-static`。
 
 ## 本地开发
 
@@ -60,18 +60,41 @@ pnpm dev      # http://localhost:8200
 
 - 表结构：把 `supabase/migrations/0001_init.sql` 整份贴进 SQL Editor 跑一次
 - Storage：建两个 bucket
-  - `blog-content` —— **private**，`posts/{locale}/{slug}.mdx`
+  - `blog-content` —— **private**，`posts/en/{slug}.mdx`（`en` 这一段是历史前缀，见下）
   - `blog-media` —— **public**，`images/{translationKey}/{filename}`
+
+## 只支持英文
+
+早先是 en / zh 双语：路由带 `/[locale]` 段、middleware 按 `Accept-Language` 把 `/` 分流、
+metadata 出 hreflang、日期与阅读时长按语言分支、搜索按语言切一份索引。
+**中文从未发布过任何内容**，而那套机械成本摊在四十来个文件里，所以整体移除了：
+
+- URL 从 `/en/xxx` 变成 `/xxx`，`vercel.json` 里两条 301 把 `/en/*` 和 `/zh/*` 收拢过来
+  （`next start` 不读 `vercel.json`，本地看到 `/en` 404 是正常的，线上才会 301）
+- `middleware.ts` 整个删掉 —— 没有语言要分流，根路径就是首页
+- `t(locale)` 变成一份平铺的 `copy` 常量；`localePath(locale, …)` 变成 `sitePath(…)`
+  （改名是有意的：让每个调用点被编译器逼着看一眼，而不是悄悄换掉语义）
+- 语言切换器、`getTranslations()`、`alternates.languages` 一并去掉
+
+**数据层刻意没动**：Postgres 的 `locale` 列与它的 `check (locale in ('en','zh'))` 约束、
+Storage 的 `posts/en/` 前缀都保持原样，写入端一律写 `CONTENT_LOCALE`（恒为 `'en'`）。
+这样就不用给已有对象改名，也不用跑破坏性迁移。同步脚本遇到 locale 对不上的行会跳过并
+在构建日志里说一声 —— 静默收进索引的话，页面会渲染出一篇读者看不懂语言的文章。
+
+发布 API 的 body **不再接受 `locale` 字段**（zod 默认会把未知键剥掉，老调用方不会报错，
+但那个值已经不起作用了）。
+
+真要恢复多语言，从 `sitePath()` 和 `src/app/` 的目录结构重新长出来，别指望还有钩子。
 
 ## 内容约定
 
-| 概念             | 说明                                                                                 |
-| ---------------- | ------------------------------------------------------------------------------------ |
-| `slug`           | 小写字母 + 数字 + 单连字符，不能撞 `site.config.ts` 里的 `RESERVED_SLUGS`            |
-| `translationKey` | 同一篇文章跨语言的分组键。缺失时中英文互不关联，不产出 hreflang                      |
-| 路由             | `/{locale}/{slug}`，locale ∈ `en` \| `zh`，**英文为主**，`/` 按 Accept-Language 分流 |
-| 站内链接         | MDX 里必须自带 locale 前缀（`/en/xxx`）。不自动补全 —— 补错比 404 更难查             |
-| 图片             | 上传到 `blog-media` 后引用返回的 `publicUrl`，会走 `next/image` 优化                 |
+| 概念             | 说明                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| `slug`           | 小写字母 + 数字 + 单连字符，不能撞 `site.config.ts` 里的 `RESERVED_SLUGS`               |
+| `translationKey` | 文章配图在 Storage 里的归拢键。不传就退化成 slug。**别删**，删了已有配图的 key 就全变了 |
+| 路由             | `/{slug}`，没有语言前缀（站点只有英文，见下）                                           |
+| 站内链接         | MDX 里直接写 `/my-post`。站内链接一律走 `sitePath()`（`src/lib/routes.ts`），别手拼     |
+| 图片             | 上传到 `blog-media` 后引用返回的 `publicUrl`，会走 `next/image` 优化                    |
 
 ## 部署
 

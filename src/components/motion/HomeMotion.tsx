@@ -5,7 +5,7 @@ import { gsap } from 'gsap'
 import { CustomEase } from 'gsap/CustomEase'
 
 /**
- * 首页的入场编排与袋鼠的交互。**只有首页加载这一份 JS**（见 app/[locale]/page.tsx）。
+ * 首页的入场编排与袋鼠的交互。**只有首页加载这一份 JS**（见 app/page.tsx）。
  *
  * ── 为什么这一段值得上 GSAP ──
  * 站里绝大多数动画留在 `motion.css` 里，纯 CSS 更省。搬到 JS 只为三件 CSS 做不到的事：

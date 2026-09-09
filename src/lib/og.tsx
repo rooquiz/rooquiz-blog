@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { ImageResponse } from 'next/og'
-import { site, type Locale } from '@config'
+import { site } from '@config'
 
 /** OG 图尺寸 / MIME —— 供各 opengraph-image.tsx 直接 re-export */
 export const ogSize = { width: 1200, height: 630 } as const
@@ -83,16 +83,13 @@ const BAND_H = 236
 export async function renderOgImage({
   title,
   subtitle,
-  locale,
   /** 有日期就压在右下角 */
   stamp,
 }: {
   title: string
   subtitle?: string
-  locale: Locale
   stamp?: string
 }): Promise<ImageResponse> {
-  const copy = site.locales[locale]
   const fonts = await loadFonts()
 
   // 标题越长字号越小，保证三行以内排得下
@@ -195,7 +192,7 @@ export async function renderOgImage({
             color: MUTED,
           }}
         >
-          <div style={{ display: 'flex' }}>{copy.title.toUpperCase()}</div>
+          <div style={{ display: 'flex' }}>{site.title.toUpperCase()}</div>
           <div style={{ display: 'flex', color: HOT }}>{stamp ?? 'BLOG.ROOQUIZ.COM'}</div>
         </div>
       </div>

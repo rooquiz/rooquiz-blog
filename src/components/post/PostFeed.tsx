@@ -1,10 +1,10 @@
 import Link from 'next/link'
 import { clsx } from 'clsx'
-import type { Locale } from '@config'
 
-import { localePath, type PostMeta } from '@/lib/content'
+import { type PostMeta } from '@/lib/content'
+import { sitePath } from '@/lib/routes'
 import { formatDate, formatReadingTime } from '@/lib/format'
-import { t } from '@/lib/i18n'
+import { copy } from '@/lib/i18n'
 import { ArrowRightIcon } from '@/components/layout/Icons'
 
 /**
@@ -15,16 +15,12 @@ import { ArrowRightIcon } from '@/components/layout/Icons'
  */
 export function PostFeed({
   posts,
-  locale,
   className,
 }: {
   posts: PostMeta[]
-  locale: Locale
   /** 首页用它给头条与文章流之间加一段间距，见 site.css 的 .home__rest */
   className?: string
 }) {
-  const copy = t(locale)
-
   if (posts.length === 0) {
     return <p className="page__empty">{copy.empty}</p>
   }
@@ -32,15 +28,14 @@ export function PostFeed({
   return (
     <ol className={clsx('feed', className)}>
       {posts.map(post => (
-        <FeedItem key={post.slug} post={post} locale={locale} />
+        <FeedItem key={post.slug} post={post} />
       ))}
     </ol>
   )
 }
 
-function FeedItem({ post, locale }: { post: PostMeta; locale: Locale }) {
-  const copy = t(locale)
-  const href = localePath(locale, post.slug)
+function FeedItem({ post }: { post: PostMeta }) {
+  const href = sitePath(post.slug)
 
   return (
     <li className="feed__item">
@@ -50,8 +45,8 @@ function FeedItem({ post, locale }: { post: PostMeta; locale: Locale }) {
         </h2>
 
         <p className="u-meta feed__meta">
-          <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
-          <span>{formatReadingTime(post.readingMinutes, locale)}</span>
+          <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+          <span>{formatReadingTime(post.readingMinutes)}</span>
         </p>
 
         {post.summary && <p className="feed__summary">{post.summary}</p>}
@@ -62,7 +57,7 @@ function FeedItem({ post, locale }: { post: PostMeta; locale: Locale }) {
             <ArrowRightIcon />
           </Link>
           {post.tags[0] && (
-            <Link href={localePath(locale, 'tags', post.tags[0])} className="chip">
+            <Link href={sitePath('tags', post.tags[0])} className="chip">
               {post.tags[0]}
             </Link>
           )}

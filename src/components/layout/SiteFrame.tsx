@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { clsx } from 'clsx'
-import type { Locale } from '@config'
 
 import { SiteFooter } from './SiteFooter'
 import { SiteHeader } from './SiteHeader'
@@ -18,14 +17,10 @@ import { Sky } from './Sky'
  * 换句话说「有没有标题块」和「天有多高」是同一个决定。
  */
 export function SiteFrame({
-  locale,
-  localeHrefs,
   section,
   hero,
   children,
 }: {
-  locale: Locale
-  localeHrefs: Partial<Record<Locale, string>>
   section?: 'journal' | 'tags' | 'search'
   /** 内页的标题块（眉标 + h1 + 元信息）。首页不传 */
   hero?: ReactNode
@@ -43,7 +38,7 @@ export function SiteFrame({
         <Sky size={hero ? 'short' : 'tall'} />
 
         <div className="shell">
-          <SiteHeader locale={locale} localeHrefs={localeHrefs} section={section} />
+          <SiteHeader section={section} />
         </div>
 
         {hero && <div className="shell frame__hero">{hero}</div>}
@@ -51,7 +46,7 @@ export function SiteFrame({
         {children}
       </div>
 
-      <SiteFooter locale={locale} />
+      <SiteFooter />
     </>
   )
 }

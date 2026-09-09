@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { LOCALES, RESERVED_SLUGS } from '@config'
+import { RESERVED_SLUGS } from '@config'
 
 /**
  * slug 规则：小写、数字、连字符。
@@ -17,8 +17,11 @@ const slugSchema = z
 
 export const postInputSchema = z.object({
   slug: slugSchema,
-  locale: z.enum(LOCALES),
-  /** 同一篇文章跨语言的分组键。不传就退化成用 slug，此时中英文各成一篇、无 hreflang 互链 */
+  /**
+   * 文章配图在 Storage 里的归拢键，不传就退化成用 slug。
+   * 早先它是「同一篇文章跨语言的分组键」，站点只有英文之后只剩这一个用途 ——
+   * **别删**，删了已有配图的 key 就全变了（见 lib/content/paths.ts）。
+   */
   translationKey: z.string().min(1).max(120).optional(),
   title: z.string().min(1).max(300),
   summary: z.string().max(600).default(''),

@@ -2,8 +2,6 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { cache } from 'react'
 
-import { DEFAULT_LOCALE, LOCALES, type Locale } from '@config'
-
 import { CONTENT_DIR, INDEX_FILE } from './paths'
 import type { ContentIndex, PostMeta } from './types'
 
@@ -21,39 +19,26 @@ const loadIndex = cache(async (): Promise<ContentIndex> => {
 
 export const getContentSource = cache(async () => (await loadIndex()).source)
 
-/** 某语言下的全部文章，按发布时间倒序 */
-export const getAllPosts = cache(async (locale: Locale): Promise<PostMeta[]> => {
+/** 全部文章，按发布时间倒序 */
+export const getAllPosts = cache(async (): Promise<PostMeta[]> => {
   const index = await loadIndex()
-  return index.posts.filter(post => post.locale === locale).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
+  return [...index.posts].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
 })
 
-export const getPost = cache(async (locale: Locale, slug: string): Promise<PostMeta | null> => {
+export const getPost = cache(async (slug: string): Promise<PostMeta | null> => {
   const index = await loadIndex()
-  return index.posts.find(post => post.locale === locale && post.slug === slug) ?? null
+  return index.posts.find(post => post.slug === slug) ?? null
 })
 
-/** 全部 locale × slug 组合，供 generateStaticParams 用 */
-export const getAllPostParams = cache(async (): Promise<{ locale: Locale; slug: string }[]> => {
+/** 全部 slug，供 generateStaticParams 用 */
+export const getAllPostParams = cache(async (): Promise<{ slug: string }[]> => {
   const index = await loadIndex()
-  return index.posts.map(post => ({ locale: post.locale, slug: post.slug }))
+  return index.posts.map(post => ({ slug: post.slug }))
 })
 
-/**
- * 同一篇文章的其它语言版本，用于 hreflang。
- * 找不到对应语言就不输出那条 alternate —— 宁可少一条，也不要指向 404。
- */
-export const getTranslations = cache(async (translationKey: string): Promise<Partial<Record<Locale, string>>> => {
-  const index = await loadIndex()
-  const result: Partial<Record<Locale, string>> = {}
-  for (const post of index.posts) {
-    if (post.translationKey === translationKey) result[post.locale] = post.slug
-  }
-  return result
-})
-
-/** 某语言下的标签及其文章数，按文章数倒序 */
-export const getAllTags = cache(async (locale: Locale): Promise<{ tag: string; count: number }[]> => {
-  const posts = await getAllPosts(locale)
+/** 标签及其文章数，按文章数倒序 */
+export const getAllTags = cache(async (): Promise<{ tag: string; count: number }[]> => {
+  const posts = await getAllPosts()
   const counts = new Map<string, number>()
   for (const post of posts) {
     for (const tag of post.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1)
@@ -63,8 +48,8 @@ export const getAllTags = cache(async (locale: Locale): Promise<{ tag: string; c
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
 })
 
-export const getPostsByTag = cache(async (locale: Locale, tag: string): Promise<PostMeta[]> => {
-  const posts = await getAllPosts(locale)
+export const getPostsByTag = cache(async (tag: string): Promise<PostMeta[]> => {
+  const posts = await getAllPosts()
   return posts.filter(post => post.tags.includes(tag))
 })
 
@@ -73,26 +58,18 @@ export async function readPostSource(post: PostMeta): Promise<string> {
   return fs.readFile(path.join(CONTENT_DIR, post.contentPath), 'utf8')
 }
 
-export function isLocale(value: string): value is Locale {
-  return (LOCALES as readonly string[]).includes(value)
-}
+/* `sitePath()` 刻意不在这个文件里，也不从这里 re-export —— 见 lib/routes.ts 的说明：
+   本模块 import 了 node:fs，客户端组件从这里取任何东西都会把它拖进浏览器 bundle。 */
 
-/** 拼站内路径，永远带 locale 前缀 —— docs 仓在这上面踩过坑（内链丢 locale 直接 404） */
-export function localePath(locale: Locale, ...segments: string[]): string {
-  const tail = segments.filter(Boolean).join('/')
-  return tail ? `/${locale}/${tail}` : `/${locale}`
-}
-
-export { DEFAULT_LOCALE, LOCALES }
-export type { Locale, PostMeta }
+export type { PostMeta }
 
 /**
- * 同一语言下的相邻文章（按发布时间倒序的前后邻居），供文章页底部的上一篇 / 下一篇。
+ * 相邻文章（按发布时间倒序的前后邻居），供文章页底部的上一篇 / 下一篇。
  * 列表已经排过序，这里只取下标 —— 不重新排，免得两处排序规则漂移。
  */
 export const getNeighbours = cache(
-  async (locale: Locale, slug: string): Promise<{ previous: PostMeta | null; next: PostMeta | null }> => {
-    const posts = await getAllPosts(locale)
+  async (slug: string): Promise<{ previous: PostMeta | null; next: PostMeta | null }> => {
+    const posts = await getAllPosts()
     const index = posts.findIndex(post => post.slug === slug)
     if (index < 0) return { previous: null, next: null }
     return {

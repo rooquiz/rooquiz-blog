@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import { site, type Locale } from '@config'
+import { site } from '@config'
 
-import { localePath } from '@/lib/content'
+import { sitePath } from '@/lib/routes'
 
 import { Logo } from './Logo'
 
@@ -17,9 +17,9 @@ import { Logo } from './Logo'
  * 可读名字挂在这个 `<a>` 上（`aria-label`），里面那张 SVG 是 `aria-hidden` ——
  * 图形本身不该再被读一遍。
  */
-export function Wordmark({ locale }: { locale: Locale }) {
+export function Wordmark() {
   return (
-    <Link href={localePath(locale)} className="brand" aria-label={site.locales[locale].title}>
+    <Link href={sitePath()} className="brand" aria-label={site.title}>
       <Logo />
     </Link>
   )

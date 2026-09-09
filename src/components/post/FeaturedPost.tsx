@@ -1,9 +1,9 @@
 import Link from 'next/link'
-import type { Locale } from '@config'
 
-import { localePath, type PostMeta } from '@/lib/content'
+import { type PostMeta } from '@/lib/content'
+import { sitePath } from '@/lib/routes'
 import { formatDate, formatReadingTime } from '@/lib/format'
-import { t } from '@/lib/i18n'
+import { copy } from '@/lib/i18n'
 import { ArrowRightIcon } from '@/components/layout/Icons'
 
 /**
@@ -16,9 +16,8 @@ import { ArrowRightIcon } from '@/components/layout/Icons'
  * 标题是 h2 不是 h1：这一页的 h1 是那行眉标（见 page.tsx 里的说明），
  * 它说的是「这一页是什么」，而不是「其中哪一篇」。
  */
-export function FeaturedPost({ post, locale }: { post: PostMeta; locale: Locale }) {
-  const copy = t(locale)
-  const href = localePath(locale, post.slug)
+export function FeaturedPost({ post }: { post: PostMeta }) {
+  const href = sitePath(post.slug)
 
   return (
     <article className="lede">
@@ -27,8 +26,8 @@ export function FeaturedPost({ post, locale }: { post: PostMeta; locale: Locale 
       </h2>
 
       <p className="u-meta lede__meta">
-        <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
-        <span>{formatReadingTime(post.readingMinutes, locale)}</span>
+        <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
+        <span>{formatReadingTime(post.readingMinutes)}</span>
       </p>
 
       {post.summary && <p className="lede__summary">{post.summary}</p>}
@@ -39,7 +38,7 @@ export function FeaturedPost({ post, locale }: { post: PostMeta; locale: Locale 
           <ArrowRightIcon />
         </Link>
         {post.tags[0] && (
-          <Link href={localePath(locale, 'tags', post.tags[0])} className="chip">
+          <Link href={sitePath('tags', post.tags[0])} className="chip">
             {post.tags[0]}
           </Link>
         )}

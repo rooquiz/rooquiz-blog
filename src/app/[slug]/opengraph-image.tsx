@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 
-import { getAllPostParams, getPost, isLocale } from '@/lib/content'
+import { getAllPostParams, getPost } from '@/lib/content'
 import { formatStamp } from '@/lib/format'
 import { ogContentType, ogSize, renderOgImage } from '@/lib/og'
 
@@ -12,17 +12,15 @@ export async function generateStaticParams() {
   return getAllPostParams()
 }
 
-export default async function PostOpengraphImage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
-  const { locale, slug } = await params
-  if (!isLocale(locale)) notFound()
+export default async function PostOpengraphImage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
 
-  const post = await getPost(locale, slug)
+  const post = await getPost(slug)
   if (!post) notFound()
 
   return renderOgImage({
     title: post.title,
     subtitle: post.summary,
-    locale,
-    stamp: formatStamp(post.publishedAt, locale),
+    stamp: formatStamp(post.publishedAt),
   })
 }

@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { site, type Locale } from '@config'
+import { site } from '@config'
 
-import { localePath } from '@/lib/content'
-import { t } from '@/lib/i18n'
+import { sitePath } from '@/lib/routes'
+import { copy } from '@/lib/i18n'
 import { RooHead } from '@/components/brand/Roo'
 
 /**
@@ -12,9 +12,7 @@ import { RooHead } from '@/components/brand/Roo'
  * 页尾要的是签名 —— 小、安静、靠左。同一个形象在一页里换两种身份，
  * 比在页尾放一个 logo 更能把整页收住。
  */
-export function SiteFooter({ locale }: { locale: Locale }) {
-  const copy = t(locale)
-
+export function SiteFooter() {
   return (
     <footer className="foot">
       <div className="shell foot__inner">
@@ -29,10 +27,10 @@ export function SiteFooter({ locale }: { locale: Locale }) {
         </div>
 
         <nav className="foot__nav" aria-label={copy.footerNav}>
-          <Link href={localePath(locale)}>{copy.journal}</Link>
-          <Link href={localePath(locale, 'tags')}>{copy.categories}</Link>
-          <Link href={localePath(locale, 'search')}>{copy.search}</Link>
-          <Link href={localePath(locale, 'feed.xml')}>{copy.rss}</Link>
+          <Link href={sitePath()}>{copy.journal}</Link>
+          <Link href={sitePath('tags')}>{copy.categories}</Link>
+          <Link href={sitePath('search')}>{copy.search}</Link>
+          <Link href={sitePath('feed.xml')}>{copy.rss}</Link>
           <a href={site.organization.url}>rooquiz.com</a>
         </nav>
       </div>

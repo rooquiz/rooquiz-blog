@@ -1,4 +1,5 @@
-import { isLocale } from '@/lib/content'
+import { CONTENT_LOCALE } from '@config'
+
 import { hasSupabaseCredentials } from '@/lib/env'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
@@ -12,12 +13,15 @@ export const dynamic = 'force-dynamic'
  *
  * 没配 Supabase 时返回 count: null 而不是 500 —— 离线开发模式下每打开一篇文章
  * 报一次 500 纯属噪音，客户端拿到非数字本来就会什么都不渲染。
+ *
+ * `posts` 表仍然带 `locale` 列（站点侧已经没有语言概念了，见 site.config.ts），
+ * 所以这里按 `CONTENT_LOCALE` 过滤 —— 那一列的值恒为 'en'。
  */
-async function resolvePostId(locale: string, slug: string): Promise<string | null> {
+async function resolvePostId(slug: string): Promise<string | null> {
   const { data } = await supabaseAdmin()
     .from('posts')
     .select('id')
-    .eq('locale', locale)
+    .eq('locale', CONTENT_LOCALE)
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle<{ id: string }>()
@@ -25,12 +29,11 @@ async function resolvePostId(locale: string, slug: string): Promise<string | nul
   return data?.id ?? null
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ locale: string; slug: string }> }) {
-  const { locale, slug } = await params
-  if (!isLocale(locale)) return Response.json({ error: 'Unknown locale' }, { status: 404 })
+export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   if (!hasSupabaseCredentials()) return Response.json({ count: null })
 
-  const postId = await resolvePostId(locale, slug)
+  const postId = await resolvePostId(slug)
   if (!postId) return Response.json({ error: 'Not found' }, { status: 404 })
 
   const { data } = await supabaseAdmin()
@@ -42,12 +45,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ loc
   return Response.json({ count: data?.count ?? 0 })
 }
 
-export async function POST(_request: Request, { params }: { params: Promise<{ locale: string; slug: string }> }) {
-  const { locale, slug } = await params
-  if (!isLocale(locale)) return Response.json({ error: 'Unknown locale' }, { status: 404 })
+export async function POST(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   if (!hasSupabaseCredentials()) return Response.json({ count: null })
 
-  const postId = await resolvePostId(locale, slug)
+  const postId = await resolvePostId(slug)
   if (!postId) return Response.json({ error: 'Not found' }, { status: 404 })
 
   const { data, error } = await supabaseAdmin().rpc('increment_post_view', { p_post_id: postId })

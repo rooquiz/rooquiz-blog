@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import readingTime from 'reading-time'
 import matter from 'gray-matter'
 
-import { site } from '@config'
+import { CONTENT_LOCALE, site } from '@config'
 import { isAuthorized, unauthorized } from '@/lib/api/auth'
 import { triggerDeploy } from '@/lib/api/deploy'
 import { postInputSchema } from '@/lib/api/schema'
@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic'
  *
  *   POST /api/posts
  *   Authorization: Bearer $BLOG_WRITE_TOKEN
- *   { slug, locale, title, summary, tags, mdx, status, deploy, ... }
+ *   { slug, title, summary, tags, mdx, status, deploy, ... }
  *
  * 幂等：正文 hash 与元数据都没变时直接返回 { changed: false } 且不触发构建，
  * 这样 AI 重跑同一批文章不会把 Vercel 的构建队列刷爆。
@@ -40,21 +40,18 @@ export async function POST(request: Request) {
 
   const input = parsed.data
   const supabase = supabaseAdmin()
-  const storagePath = postObjectPath(input.locale, input.slug)
+  const storagePath = postObjectPath(input.slug)
   const contentHash = createHash('sha256').update(input.mdx).digest('hex')
 
-  // 阅读时长在服务端算一次，写进索引；中文按字符估，reading-time 按词切会严重低估
+  // 阅读时长在服务端算一次，写进索引 —— 客户端和构建期都不该各算一遍
   const mdxBody = matter(input.mdx).content
-  const readingMinutes =
-    input.locale === 'zh'
-      ? Math.max(1, Math.round(mdxBody.replace(/\s+/g, '').length / 400))
-      : Math.max(1, Math.round(readingTime(mdxBody).minutes))
+  const readingMinutes = Math.max(1, Math.round(readingTime(mdxBody).minutes))
 
   // 先读已有行：published_at 要拿它兜底，否则每次重发都会生成新时间戳、幂等永远判不成立
   const { data: existing, error: readError } = await supabase
     .from('posts')
     .select('id, content_hash, title, summary, cover_url, tags, author, status, translation_key, published_at')
-    .eq('locale', input.locale)
+    .eq('locale', CONTENT_LOCALE)
     .eq('slug', input.slug)
     .maybeSingle<ExistingRow & { id: string; content_hash: string }>()
 
@@ -68,7 +65,7 @@ export async function POST(request: Request) {
 
   const record = {
     slug: input.slug,
-    locale: input.locale,
+    locale: CONTENT_LOCALE,
     translation_key: input.translationKey ?? input.slug,
     title: input.title,
     summary: input.summary,
@@ -83,7 +80,7 @@ export async function POST(request: Request) {
   }
 
   if (existing && existing.content_hash === contentHash && isMetadataUnchanged(existing, record)) {
-    return Response.json({ changed: false, slug: input.slug, locale: input.locale, deploy: { triggered: false } })
+    return Response.json({ changed: false, slug: input.slug, deploy: { triggered: false } })
   }
 
   const { error: uploadError } = await supabase.storage
@@ -115,7 +112,6 @@ export async function POST(request: Request) {
     changed: true,
     created: !existing,
     slug: input.slug,
-    locale: input.locale,
     storagePath,
     contentHash,
     readingMinutes,

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
 import { site } from '@config'
 
-import { getAllPosts, getAllTags, isLocale, localePath } from '@/lib/content'
-import { t } from '@/lib/i18n'
+import { getAllPosts, getAllTags } from '@/lib/content'
+import { sitePath } from '@/lib/routes'
+import { copy } from '@/lib/i18n'
 import { buildMetadata } from '@/lib/metadata'
 import { RooMascot } from '@/components/brand/Roo'
 import { SiteFrame } from '@/components/layout/SiteFrame'
@@ -15,22 +15,13 @@ import { PostFeed } from '@/components/post/PostFeed'
 
 export const dynamic = 'force-static'
 
-/** 首页在两种语言下都存在，hreflang 直接互指 */
-const HOME_PATHS = { en: localePath('en'), zh: localePath('zh') }
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
-  const { locale } = await params
-  if (!isLocale(locale)) return {}
-  return buildMetadata({ locale, paths: HOME_PATHS })
+export function generateMetadata(): Metadata {
+  return buildMetadata({ path: sitePath() })
 }
 
-export default async function BlogIndexPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params
-  if (!isLocale(locale)) notFound()
-
-  const [posts, tags] = await Promise.all([getAllPosts(locale), getAllTags(locale)])
+export default async function BlogIndexPage() {
+  const [posts, tags] = await Promise.all([getAllPosts(), getAllTags()])
   const totalPages = Math.max(1, Math.ceil(posts.length / site.pageSize))
-  const copy = t(locale)
 
   /*
    * 最新一篇当头条，剩下的排成文章流。两者一起构成第一页的 pageSize 篇 ——
@@ -40,7 +31,7 @@ export default async function BlogIndexPage({ params }: { params: Promise<{ loca
 
   return (
     /* 不传 hero —— 首页要的是拉满的那片天，英雄区由下面这个两栏网格自己排出来 */
-    <SiteFrame locale={locale} localeHrefs={HOME_PATHS} section="journal">
+    <SiteFrame section="journal">
       {/*
        * 入场编排。零 DOM 的客户端组件 —— 它要动的东西跨 .sky（在 SiteFrame 里）
        * 和下面这个网格两棵子树，没有共同的客户端边界，所以自己去查 .frame--home。
@@ -68,16 +59,16 @@ export default async function BlogIndexPage({ params }: { params: Promise<{ loca
 
           {featured ? (
             <>
-              <FeaturedPost post={featured} locale={locale} />
-              {rest.length > 0 && <PostFeed posts={rest} locale={locale} className="home__rest" />}
-              <Pager locale={locale} current={1} total={totalPages} />
+              <FeaturedPost post={featured} />
+              {rest.length > 0 && <PostFeed posts={rest} className="home__rest" />}
+              <Pager current={1} total={totalPages} />
             </>
           ) : (
             <p className="page__empty">{copy.empty}</p>
           )}
         </div>
 
-        <CategoryRail tags={tags} locale={locale} />
+        <CategoryRail tags={tags} />
       </main>
     </SiteFrame>
   )

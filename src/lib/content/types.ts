@@ -1,10 +1,11 @@
-import type { Locale } from '@config'
-
 /** 一篇文章的索引元数据。构建期从 Postgres（或本地样例的 frontmatter）投影而来。 */
 export interface PostMeta {
   slug: string
-  locale: Locale
-  /** 同一篇文章跨语言的分组键，驱动 hreflang */
+  /**
+   * 早先驱动 hreflang 的跨语言分组键。站点只有英文之后它对页面已经没用了，
+   * **但不能删** —— 文章配图在 Storage 里是按它归拢的
+   * （`mediaObjectPrefix()`，见 paths.ts），删掉就得给已有对象改名。
+   */
   translationKey: string
   title: string
   summary: string
