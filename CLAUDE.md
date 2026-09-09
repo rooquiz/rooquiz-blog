@@ -160,6 +160,16 @@ pnpm lint
   而旧的 `next start` 进程还在用旧 HTML，引用的 CSS 已被删掉 → 整页无样式，
   表现是 `next/image` 的 `fill` 图铺满全屏。杀进程用 `lsof -ti :8200 | xargs kill`，
   `pkill -f "next start"` 匹配不到（进程名是 `next-server`）。
+- **`next dev` 会把正在被 `next start` 服务的构建产物覆盖掉**（两者共用 `.next`），
+  哪怕换了端口也一样 —— `next dev -p 8201` 一起，8200 手里那份 HTML 引用的 CSS
+  当场全部 404，整页无样式。这一条比上一条阴险：你没跑 `pnpm build`，
+  也没动任何代码，页面自己就坏了。**别在 `next start` 还开着的时候起 dev。**
+  一分钟自检：
+  ```bash
+  for u in $(curl -s http://localhost:8200/en | grep -o '/_next/static/css/[a-z0-9]*\.css' | sort -u); do
+    printf '%s → %s\n' "$u" "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8200$u)"
+  done   # 出现 400/404 就是这个坑，清 .next 重新 build 再重启
+  ```
 - **站内路径统一用 `localePath()`**（`src/lib/content/index.ts`），别手拼字符串
   —— 丢了 locale 前缀就是 404。
 - **Storage key 前缀只有一个来源**：`src/lib/content/paths.ts` 的
