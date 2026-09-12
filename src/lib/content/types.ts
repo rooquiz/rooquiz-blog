@@ -14,6 +14,14 @@ export interface PostMeta {
   author: string
   /** ISO 字符串。本地样例里可能缺失，用文件 mtime 兜底 */
   publishedAt: string
+  /**
+   * 最后一次改动时间（Postgres 的 `updated_at`，由触发器维护）。
+   * 驱动 JSON-LD 的 `dateModified`、sitemap 的 `lastmod` 与 og:modified_time ——
+   * 搜索引擎与 AI 检索都用它判断一篇旧文是不是还在被维护。
+   * 库里没有（本地样例）就退回 publishedAt，**不要留空**：缺 lastmod 的条目
+   * 会被当成「从未更新」，比写一个等于发布时间的值更差。
+   */
+  updatedAt: string
   readingMinutes: number
   /** 相对 .content/ 的 MDX 文件路径，形如 posts/en/xxx.mdx */
   contentPath: string

@@ -21,3 +21,15 @@ export function sitePath(...segments: string[]): string {
   const tail = segments.filter(Boolean).join('/')
   return tail ? `/${tail}` : '/'
 }
+
+/**
+ * 一篇文章的 Markdown 版路径（`/{slug}.md`）。
+ *
+ * 这个后缀是给模型读的：抓取端拿到的是正文本身，而不是一整页 HTML 里
+ * 掺着导航、云、袋鼠的那份。真正的路由是 `/md/{slug}`（`src/app/md/[slug]/route.ts`），
+ * `.md` 这个形状由 `next.config.mjs` 里的 rewrite 落到它上面 ——
+ * 原因是 App Router 的动态段必须独占一整段，`[slug].md` 不是合法目录名。
+ */
+export function postMarkdownPath(slug: string): string {
+  return `/${slug}.md`
+}

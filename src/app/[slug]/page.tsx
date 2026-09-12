@@ -3,18 +3,19 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { clsx } from 'clsx'
-import { site } from '@config'
 
 import { getAllPostParams, getNeighbours, getPost, readPostSource, type PostMeta } from '@/lib/content'
-import { sitePath } from '@/lib/routes'
+import { postMarkdownPath, sitePath } from '@/lib/routes'
+import { countWords } from '@/lib/content/markdown'
 import { renderMdx } from '@/lib/content/mdx'
 import { extractToc } from '@/lib/content/toc'
 import { formatDate, formatReadingTime } from '@/lib/format'
 import { copy } from '@/lib/i18n'
+import { postJsonLd } from '@/lib/jsonld'
 import { buildMetadata } from '@/lib/metadata'
-import { absoluteUrl } from '@/lib/seo'
 import { SiteFrame } from '@/components/layout/SiteFrame'
 import { ArrowLeftIcon } from '@/components/layout/Icons'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { TableOfContents } from '@/components/post/TableOfContents'
 import { ViewCounter } from '@/components/post/ViewCounter'
 
@@ -32,22 +33,23 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const post = await getPost(slug)
   if (!post) return {}
 
-  return {
-    ...buildMetadata({
-      title: post.title,
-      description: post.summary,
-      path: sitePath(post.slug),
-    }),
-    openGraph: {
-      type: 'article',
-      title: post.title,
-      description: post.summary,
-      url: absoluteUrl(sitePath(post.slug)),
+  /*
+   * 文章的 openGraph 必须由 buildMetadata 一次拼全，别再在这里单独盖一个 ——
+   * Next 的 metadata 合并是逐个顶层字段浅合并，页面自己写 `openGraph` 就会把根
+   * layout 那块整个替换掉（早先这里就是那样，每篇文章都丢了 og:site_name 与 og:locale）。
+   */
+  return buildMetadata({
+    title: post.title,
+    description: post.summary,
+    path: sitePath(post.slug),
+    article: {
       publishedTime: post.publishedAt,
+      modifiedTime: post.updatedAt,
       authors: [post.author],
       tags: post.tags,
     },
-  }
+    markdownPath: postMarkdownPath(post.slug),
+  })
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -60,18 +62,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const [content, neighbours] = await Promise.all([renderMdx(source), getNeighbours(post.slug)])
   const toc = extractToc(source)
 
-  const articleJsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.title,
-    description: post.summary,
-    datePublished: post.publishedAt,
-    author: { '@type': 'Organization', '@id': site.organization.id, name: post.author },
-    publisher: { '@id': site.organization.id },
-    mainEntityOfPage: absoluteUrl(sitePath(post.slug)),
-    inLanguage: 'en',
-    keywords: post.tags.join(', '),
-  }
+  /* 同一天发布又改的不算「更新过」—— 库里的 updated_at 精确到毫秒，
+     发布当天补个错字就会显示成「最后更新于（发布日）」，读者只会觉得这行是坏的 */
+  const updated = post.updatedAt.slice(0, 10) > post.publishedAt.slice(0, 10) ? post.updatedAt : null
 
   return (
     <SiteFrame
@@ -96,11 +89,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       }
     >
       <main className="shell article">
-        <script
-          type="application/ld+json"
-          // JSON-LD 的内容全部来自我们自己的索引，不含用户输入
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-        />
+        <JsonLd data={postJsonLd(post, { wordCount: countWords(source) })} />
 
         <article className="article__body">
           {post.coverUrl && (
@@ -112,6 +101,21 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           {post.summary && <p className="u-lede text-[1.0625em]">{post.summary}</p>}
 
           <div className="prose mt-8">{content}</div>
+
+          {/*
+           * 署名与更新日期。两条都是 E-E-A-T 要的「谁写的、什么时候还在维护」，
+           * 而且必须在页面上看得见 —— JSON-LD 里的 author / dateModified 要有可见的对应物，
+           * 光写进结构化数据是对不上账的（作者名一字不差，见 lib/jsonld.ts）。
+           *
+           * 放正文末尾而不是天上那行元信息里：英雄区排在一片定高的天里，
+           * 那行现在是「日期 · 时长 · 阅读量」三项，390px 上正好一行；加第四项就会折行，
+           * 而分隔点画在每项前面（sky.css 的 `.sky__meta > * + *::before`），
+           * 折行后第二行会以一个孤立的「·」开头。
+           */}
+          <p className="u-meta mt-10">
+            {copy.byline(post.author)}
+            {updated && ` · ${copy.updatedOn(formatDate(updated))}`}
+          </p>
 
           {post.tags.length > 0 && (
             <div className="article__tags">

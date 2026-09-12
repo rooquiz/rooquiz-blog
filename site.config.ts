@@ -17,6 +17,15 @@ export const site = {
   tagline: 'Quiz marketing, lead generation, and assessment design for coaches and creators.',
   description:
     'Practical guides on building quizzes that capture leads, spark shares, and turn curiosity into customers.',
+  /**
+   * 首页 `<title>` 的前半段，走 layout 里那条 `%s · RooQuiz Blog` 模板，
+   * 拼出来是「Quiz Marketing and Lead Generation Guides · RooQuiz Blog」（54 字符，不会被截）。
+   *
+   * 为什么首页不直接用 `site.title`：搜索结果里那一行是唯一的排序信号载体，
+   * 光一个品牌名等于放弃了「quiz marketing / lead generation」这两个词 ——
+   * 而品牌名靠模板的后半段已经带上了。别把这里写成一整句话，超过 60 字符会被截。
+   */
+  homeTitle: 'Quiz Marketing and Lead Generation Guides',
   /** 列表页每页文章数 */
   pageSize: 12,
   /** JSON-LD 里 Organization 的稳定实体标识，与 topic-coaching 共用同一个 @id */
@@ -24,6 +33,8 @@ export const site = {
     url: 'https://rooquiz.com',
     id: 'https://rooquiz.com/#organization',
     name: 'RooQuiz',
+    /** Organization 节点的 logo（站内路径，JSON-LD 里再绝对化）。SVG 在 Google 支持的图片格式之内 */
+    logo: '/brand/logo.svg',
   },
   defaultAuthor: 'RooQuiz Team',
 } as const
@@ -54,6 +65,10 @@ export const RESERVED_SLUGS = new Set([
   'opengraph-image',
   'en',
   'zh',
+  // GEO：给模型读的那几个出口（见 src/app/llms.txt / llms-full.txt / md）
+  'llms.txt',
+  'llms-full.txt',
+  'md',
   // 临时验证页，M3 结束后连同 src/app/kitchen-sink 一起删掉
   'kitchen-sink',
 ])

@@ -45,4 +45,17 @@ export const copy = {
   resultCount: (n: number) => `${n} ${n === 1 ? 'post' : 'posts'}`,
   postsUnderTag: (tag: string) => `Posts in “${tag}”`,
   pageN: (n: number) => `Page ${n}`,
+  byline: (author: string) => `By ${author}`,
+  updatedOn: (date: string) => `Last updated on ${date}`,
+
+  /* ---- 只出现在搜索结果里的文案 ----
+   * 列表页早先一律退回站点描述，于是首页、/tags、每个分类页在 SERP 里是同一段话 ——
+   * 对搜索引擎那是四个互相重复的页面，对读者那一行也没说清点进去能看到什么。
+   * 长度按 150–160 字符排，再长会被截。 */
+  tagsMetaDescription:
+    'Every topic covered on the RooQuiz blog: quiz design, lead generation, result screens, benchmarks, and assessment reporting.',
+  tagMetaDescription: (tag: string, count: number) =>
+    `${count} ${count === 1 ? 'article' : 'articles'} on ${tag} from the RooQuiz team — what works in quiz marketing, and what the completion data actually shows.`,
+  pageMetaDescription: (n: number) =>
+    `Page ${n} of the RooQuiz blog archive: quiz marketing, lead generation, and assessment design, newest first.`,
 } as const

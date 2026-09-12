@@ -5,8 +5,10 @@ import { site } from '@config'
 import { getAllPosts, getAllTags } from '@/lib/content'
 import { sitePath } from '@/lib/routes'
 import { copy } from '@/lib/i18n'
+import { blogIndexJsonLd } from '@/lib/jsonld'
 import { buildMetadata } from '@/lib/metadata'
 import { SiteFrame } from '@/components/layout/SiteFrame'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { CategoryRail } from '@/components/post/CategoryRail'
 import { Pager } from '@/components/post/Pager'
 import { PostFeed } from '@/components/post/PostFeed'
@@ -24,7 +26,11 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ n: string }> }): Promise<Metadata> {
   const { n } = await params
-  return buildMetadata({ title: copy.pageN(Number(n)), path: sitePath('page', n) })
+  return buildMetadata({
+    title: copy.pageN(Number(n)),
+    description: copy.pageMetaDescription(Number(n)),
+    path: sitePath('page', n),
+  })
 }
 
 export default async function PagedIndexPage({ params }: { params: Promise<{ n: string }> }) {
@@ -50,6 +56,14 @@ export default async function PagedIndexPage({ params }: { params: Promise<{ n: 
       }
     >
       <main className="shell home">
+        <JsonLd
+          data={blogIndexJsonLd(slice, {
+            path: sitePath('page', n),
+            page: current,
+            description: copy.pageMetaDescription(current),
+          })}
+        />
+
         <div className="home__main">
           {/* 第 2 页起没有头条：「最新一篇」这个身份只属于第一页 */}
           <PostFeed posts={slice} />

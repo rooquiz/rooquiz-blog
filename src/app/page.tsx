@@ -4,10 +4,12 @@ import { site } from '@config'
 import { getAllPosts, getAllTags } from '@/lib/content'
 import { sitePath } from '@/lib/routes'
 import { copy } from '@/lib/i18n'
+import { blogIndexJsonLd } from '@/lib/jsonld'
 import { buildMetadata } from '@/lib/metadata'
 import { RooMascot } from '@/components/brand/Roo'
 import { SiteFrame } from '@/components/layout/SiteFrame'
 import { HomeMotion } from '@/components/motion/HomeMotion'
+import { JsonLd } from '@/components/seo/JsonLd'
 import { CategoryRail } from '@/components/post/CategoryRail'
 import { FeaturedPost } from '@/components/post/FeaturedPost'
 import { Pager } from '@/components/post/Pager'
@@ -16,7 +18,14 @@ import { PostFeed } from '@/components/post/PostFeed'
 export const dynamic = 'force-static'
 
 export function generateMetadata(): Metadata {
-  return buildMetadata({ path: sitePath() })
+  /*
+   * 首页的 <title> 走 site.homeTitle 而不是默认的站名（理由写在 site.config.ts）。
+   *
+   * 品牌名在这里要**手工接上**：根 layout 那条 `%s · RooQuiz Blog` 模板只作用于
+   * 下层路由段，而 app/page.tsx 和 app/layout.tsx 是同一段 —— 只写 homeTitle
+   * 出来的标题里一个品牌名都没有。改这一句时对照 layout.tsx 里的模板，别让两边的分隔符漂开。
+   */
+  return buildMetadata({ title: `${site.homeTitle} · ${site.title}`, path: sitePath() })
 }
 
 export default async function BlogIndexPage() {
@@ -38,6 +47,12 @@ export default async function BlogIndexPage() {
        * 只有首页挂它，那份 GSAP 也就只进首页的 chunk。
        */}
       <HomeMotion />
+
+      {/*
+       * 结构化数据。人看到的是下面那一列卡片，机器看到的是同一份内容的 ItemList ——
+       * 生成式检索靠它一次拿全「这个站有哪些文章」，不用逐页去爬。
+       */}
+      <JsonLd data={blogIndexJsonLd(posts.slice(0, site.pageSize), { path: sitePath(), page: 1 })} />
 
       <main className="shell home">
         {/*

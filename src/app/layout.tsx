@@ -44,6 +44,28 @@ export const metadata: Metadata = {
   metadataBase: new URL(absoluteUrl('/')),
   title: { default: site.title, template: `%s · ${site.title}` },
   description: site.description,
+  applicationName: site.title,
+  authors: [{ name: site.organization.name, url: site.organization.url }],
+  creator: site.organization.name,
+  publisher: site.organization.name,
+  /*
+   * 预览规格要显式放开。Google 的默认值是小缩略图 + 一段自己截的短摘要；
+   * `max-image-preview: large` 决定了图文结果与 Discover 里能不能出大图，
+   * `max-snippet: -1` 是不限制摘要长度 —— 对以问句开头的长文，
+   * 摘要能不能把答案那一句完整带上，就差在这一条。
+   * 各页面的 noIndex 由 buildMetadata 单独覆盖（见 lib/metadata.ts 里的说明）。
+   */
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
   openGraph: {
     type: 'website',
     siteName: site.title,

@@ -73,6 +73,7 @@ interface PostRow {
   content_hash: string
   reading_minutes: number | null
   published_at: string | null
+  updated_at: string | null
 }
 
 async function syncFromSupabase(): Promise<ContentIndex> {
@@ -83,7 +84,7 @@ async function syncFromSupabase(): Promise<ContentIndex> {
   const { data, error } = await supabase
     .from('posts')
     .select(
-      'slug, locale, translation_key, title, summary, cover_url, tags, author, storage_path, content_hash, reading_minutes, published_at',
+      'slug, locale, translation_key, title, summary, cover_url, tags, author, storage_path, content_hash, reading_minutes, published_at, updated_at',
     )
     .eq('status', 'published')
     .order('published_at', { ascending: false })
@@ -141,6 +142,9 @@ async function syncFromSupabase(): Promise<ContentIndex> {
       tags: row.tags ?? [],
       author: row.author ?? site.defaultAuthor,
       publishedAt: row.published_at ?? new Date(0).toISOString(),
+      // updated_at 由 posts 表的触发器维护，改一次正文就动一次；
+      // 库里为空（老数据）时退回发布时间，别让 lastmod 缺项
+      updatedAt: row.updated_at ?? row.published_at ?? new Date(0).toISOString(),
       readingMinutes: row.reading_minutes ?? estimateReadingMinutes(body),
       contentPath: row.storage_path,
     })
@@ -183,6 +187,9 @@ async function syncFromSamples(): Promise<ContentIndex> {
     const raw = await fs.readFile(path.join(dir, entry), 'utf8')
     const { data: frontmatter, content: body } = matter(raw)
     const storagePath = `posts/${CONTENT_LOCALE}/${slug}.mdx`
+    const publishedAt = frontmatter.publishedAt
+      ? new Date(frontmatter.publishedAt).toISOString()
+      : new Date(0).toISOString()
 
     await writeFileEnsured(path.join(CONTENT_DIR, storagePath), raw)
 
@@ -194,9 +201,9 @@ async function syncFromSamples(): Promise<ContentIndex> {
       coverUrl: frontmatter.coverUrl ? String(frontmatter.coverUrl) : null,
       tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.map(String) : [],
       author: String(frontmatter.author ?? site.defaultAuthor),
-      publishedAt: frontmatter.publishedAt
-        ? new Date(frontmatter.publishedAt).toISOString()
-        : new Date(0).toISOString(),
+      publishedAt,
+      // 样例没有库里的 updated_at，frontmatter 可以显式写 updatedAt，否则等于发布时间
+      updatedAt: frontmatter.updatedAt ? new Date(frontmatter.updatedAt).toISOString() : publishedAt,
       readingMinutes: estimateReadingMinutes(body),
       contentPath: storagePath,
     })

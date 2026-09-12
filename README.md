@@ -96,6 +96,68 @@ Storage 的 `posts/en/` 前缀都保持原样，写入端一律写 `CONTENT_LOCA
 | 站内链接         | MDX 里直接写 `/my-post`。站内链接一律走 `sitePath()`（`src/lib/routes.ts`），别手拼     |
 | 图片             | 上传到 `blog-media` 后引用返回的 `publicUrl`，会走 `next/image` 优化                    |
 
+## SEO 与 GEO
+
+两件事一起做：给搜索引擎的（能不能被正确收录、展示）和给生成式检索的
+（模型抓走之后能不能正确引用）。产物全部在构建期固化，运行时零成本。
+
+### 对外的出口
+
+| 路径             | 内容                                                            | 谁在读      |
+| ---------------- | --------------------------------------------------------------- | ----------- |
+| `/sitemap.xml`   | 全部可索引 URL；`lastmod` 取 `updated_at`，文章带 `image:image` | 搜索引擎    |
+| `/robots.txt`    | `*` 一条 + 一组具名 AI 抓取端一条                               | 所有抓取端  |
+| `/feed.xml`      | 最近 50 篇 RSS（每页 `<head>` 里有自动发现链接）                | 阅读器      |
+| `/llms.txt`      | 站点索引，llmstxt.org 的格式，链接一律指向 `.md` 版             | 模型 / 代理 |
+| `/llms-full.txt` | 最近 50 篇正文拼成一份，一次取全                                | 模型 / 代理 |
+| `/{slug}.md`     | 单篇的干净 Markdown，头部带出处 / 日期 / 作者 / 标签            | 模型 / 代理 |
+
+抓 HTML 时正文外面裹着导航、云、袋鼠、目录、上一篇下一篇，模型得先猜哪一段是文章；
+`.md` 那份没有这个问题，引用准确率的差别就在这里。三个出口共用同一份投影
+（`src/lib/content/markdown.ts`），别各拼各的。
+
+`/{slug}.md` 的真身是 `/md/{slug}`（`src/app/md/[slug]/route.ts`），`.md` 这个形状靠
+`next.config.mjs` 里一条 rewrite 落上去 —— App Router 的动态段必须独占一整段，
+`[slug].md` 不是合法目录名。改一处要改两处。
+
+### 结构化数据
+
+`src/lib/jsonld.ts` 出一张 `@graph`：Organization / WebSite / Blog 三个常驻节点，
+加上当页自己的（文章页是 WebPage + BlogPosting + BreadcrumbList，
+列表页是 CollectionPage + ItemList）。
+
+- **`@id` 必须指向真的输出过的节点。** 早先文章页写
+  `publisher: { '@id': 'https://rooquiz.com/#organization' }` 却从不输出那个节点，
+  那是一条悬空引用，rich results 测试里 publisher 直接是空的。
+- **`author` 不复用 Organization 那个 `@id`**：它的 `name` 是「RooQuiz」，而页面上
+  那行署名是「RooQuiz Team」。Google 拿可见署名与结构化数据对账，对不上会把 author
+  判为不可信 —— 所以就地写一个同名节点，并且**正文末尾那行 `By …` 不能删**，
+  它就是那个可见的对应物。`dateModified` 同理，配一行「Last updated on …」
+  （只在改动日晚于发布日时出现）。
+- 列表页的 ItemList 不是装饰：生成式检索靠它一次拿全「这个站在这个主题下有哪些文章」，
+  不用逐页爬 HTML。
+
+### metadata 的两个坑
+
+- **openGraph 必须一次写全。** Next 的 metadata 是逐个顶层字段**浅合并**：页面只要
+  声明了 `openGraph`，根 layout 那一整块就被替换掉，而不是逐字段补齐。文章页早先自己
+  拼了一个只有 title/description/url 的 openGraph，于是每篇文章的卡片都丢了
+  `og:site_name` 与 `og:locale`。现在所有页面只能通过 `buildMetadata()` 出
+  （`src/lib/metadata.ts`）。
+- **不要写 `robots: undefined`。** 合并按 `for…in` 遍历源对象，键在、值是 undefined
+  也算声明过，会把根 layout 那条 `max-image-preview:large` / `max-snippet:-1` 整条抹掉。
+  要么这个键不出现，要么给全。
+
+另外首页的 `<title>` 要手工接品牌名：`title.template` 只作用于**下层**路由段，
+而 `app/page.tsx` 与 `app/layout.tsx` 是同一段，只写 `site.homeTitle` 出来的标题里
+一个品牌名都没有。
+
+### `updated_at` 一路贯通
+
+Postgres 里那列早就有（触发器维护），以前没进索引。现在是
+`sync → PostMeta.updatedAt → sitemap 的 lastmod / og:modified_time / JSON-LD 的
+dateModified / feed 的 lastBuildDate`。少了它，一篇改过的旧文在抓取端眼里永远没变过。
+
 ## 部署
 
 Vercel，region `iad1`（与 Vercel 默认构建区域、Supabase project 同区——

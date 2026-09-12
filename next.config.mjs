@@ -14,6 +14,20 @@ const nextConfig = {
       },
     ],
   },
+  /**
+   * `/{slug}.md` → `/md/{slug}`。
+   *
+   * 那个 `.md` 后缀是给抓取端的（见 src/lib/routes.ts 的 `postMarkdownPath`），
+   * 但 App Router 的动态段必须独占一整段 —— `[slug].md` 不是合法目录名，
+   * 所以真正的路由建在 `/md/[slug]`，靠这条 rewrite 换个形状对外。
+   *
+   * 走 next.config 而不是 vercel.json：`next start` 也读这里，本地能验；
+   * vercel.json 里那两条 301 只有线上才生效。
+   * 模式限成 slug 的字符集，免得把 `/foo.bar.md` 之类也吃进来。
+   */
+  async rewrites() {
+    return [{ source: '/:slug([a-z0-9-]+).md', destination: '/md/:slug' }]
+  },
 }
 
 export default nextConfig

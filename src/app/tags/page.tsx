@@ -4,13 +4,19 @@ import Link from 'next/link'
 import { getAllTags } from '@/lib/content'
 import { sitePath } from '@/lib/routes'
 import { copy } from '@/lib/i18n'
+import { tagsIndexJsonLd } from '@/lib/jsonld'
 import { buildMetadata } from '@/lib/metadata'
 import { SiteFrame } from '@/components/layout/SiteFrame'
+import { JsonLd } from '@/components/seo/JsonLd'
 
 export const dynamic = 'force-static'
 
 export function generateMetadata(): Metadata {
-  return buildMetadata({ title: copy.categories, path: sitePath('tags') })
+  return buildMetadata({
+    title: copy.categories,
+    description: copy.tagsMetaDescription,
+    path: sitePath('tags'),
+  })
 }
 
 export default async function TagsIndexPage() {
@@ -27,6 +33,8 @@ export default async function TagsIndexPage() {
       }
     >
       <main className="shell page">
+        <JsonLd data={tagsIndexJsonLd(tags)} />
+
         {tags.length === 0 ? (
           <p className="page__empty">{copy.empty}</p>
         ) : (

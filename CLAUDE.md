@@ -201,6 +201,34 @@ pnpm lint
   当前主题存在 `localStorage` 里，服务端渲染时不可知，用 state 首帧一定是错的那一枚。
   同理它的 `aria-label` 是固定的「切换深浅色」，不是「切换到深色」。
 
+### SEO 与 GEO
+
+- **页面 metadata 只能从 `buildMetadata()` 出**（`src/lib/metadata.ts`）。Next 的合并是
+  逐个顶层字段**浅合并** —— 页面自己写一个 `openGraph`，根 layout 那块整个被替换，
+  不是逐字段补齐。文章页早先就是那样，每篇都丢了 `og:site_name` 与 `og:locale`。
+  同理**别写 `robots: undefined`**：合并按 `for…in` 走，键在、值是 undefined 也算声明过，
+  会把根 layout 那条 `max-image-preview:large` 抹掉（所以那个键是条件展开进去的）。
+- **首页 `<title>` 里的品牌名是手工接的**：`title.template` 只作用于下层路由段，
+  而 `app/page.tsx` 和 `app/layout.tsx` 是同一段。改 `site.homeTitle` 时对着
+  layout 里那条模板看，别让分隔符漂开。
+- **JSON-LD 全部走 `src/lib/jsonld.ts` 的那张 `@graph`，`@id` 不许悬空**：
+  引用一个从没输出过的节点（早先的 `publisher: { '@id': … }`）等于没写。
+  `author` 也刻意不复用 Organization 的 `@id` —— 它叫「RooQuiz」，页面上的署名是
+  「RooQuiz Team」，两边必须一字不差。**正文末尾那行 `By …` 和「Last updated on …」
+  是结构化数据的可见对应物，别删。**
+- **署名不要搬回天上那行元信息**（`.sky__meta`）。那行现在是「日期 · 时长 · 阅读量」
+  三项，390px 上正好一行；加第四项就折行，而分隔点画在每项前面
+  （`.sky__meta > * + *::before`），第二行会以一个孤立的「·」开头。
+- **`/{slug}.md` 与 `/md/[slug]` 是一对**：真身是 `src/app/md/[slug]/route.ts`，
+  `.md` 那个形状由 `next.config.mjs` 的 rewrite 落上去（App Router 的动态段必须
+  独占一整段，`[slug].md` 不是合法目录名）。llms.txt / llms-full.txt / md 三个
+  已经进了 `RESERVED_SLUGS`。
+- **`/{slug}.md`、`/llms.txt`、`/llms-full.txt` 共用 `lib/content/markdown.ts` 那份投影**，
+  别在某个出口里另拼一套：它们的读者是同一批，格式漂移会让同一篇文章在两处长得不一样。
+- **`PostMeta.updatedAt` 串着四个地方**（sitemap 的 lastmod、og:modified_time、
+  JSON-LD 的 dateModified、feed 的 lastBuildDate）。它来自 Postgres 的 `updated_at`，
+  在 `sync-content.mts` 里投影；本地样例没有这列，退回 publishedAt。
+
 ### 其它
 
 - **HeroUI v3 必须走 per-component 子路径**：`@heroui/react/card`，不是
