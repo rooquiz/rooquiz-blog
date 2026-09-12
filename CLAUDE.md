@@ -235,6 +235,16 @@ pnpm lint
   `@heroui/react`。barrel 在 Server Component 里会因 `client-only` 构建失败。
 - **HeroUI 组件全是 `'use client'`**。正文（`components/mdx/`）、文章流、边栏、分页
   刻意不用它。要加交互组件，先想清楚这一屏是否值得多一份 react-aria。
+- **typography 自带的颜色要逐条换成 token**（`globals.css` 的 `.prose` 那一串
+  `--tw-prose-*`）。漏一条不会报错，只会在某个主题下把字弄没：`--tw-prose-pre-code`
+  默认是配深底的 gray-200，落在本站浅底的代码块上就是白纸上的浅灰字；`--tw-prose-code`
+  默认近黑且不随主题翻，暗色下行内代码整块消失。两条都踩过。
+- **Shiki 走 `defaultColor: false`**（`lib/content/mdx.tsx`）：两套主题只出
+  `--shiki-light` / `--shiki-dark`，由 `globals.css` 按 `html[data-theme]` 挑一档。
+  默认那档会把浅色主题的字色和白底写成**内联样式**，压过一切选择器，暗色下代码块
+  是深底页面里一块白纸。底色不用 Shiki 那两档，统一走 `--surface`。
+  **`defaultLanguage` 和 `fallbackLanguage` 要一起给**：前者管没标语言的围栏
+  （少了它这类围栏整个绕开 Shiki），后者管标了但 Shiki 不认识的。
 - **内容页一律 `export const dynamic = 'force-static'`**，凡是列举得完的路由都要
   写 `generateStaticParams` + `dynamicParams = false`。新增页面后跑一次
   `pnpm build`，确认它在产物清单里是 `●`/`○` 而不是 `ƒ`。

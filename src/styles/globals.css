@@ -244,6 +244,22 @@ a.chip:hover {
   --tw-prose-captions: var(--muted);
   --tw-prose-th-borders: var(--rule);
   --tw-prose-td-borders: var(--rule);
+  /*
+   * 行内代码、<kbd> 的字色。默认是近黑的 gray-900，浅色下看着像对的 ——
+   * 但它**不随主题翻**，暗色下就是深底上的一块深字（那几个 `utm_source` 当场消失）。
+   * 凡是 typography 自带的颜色都要换成 token，剩一个没换就是暗色下的一处坑。
+   */
+  --tw-prose-code: var(--ink);
+  --tw-prose-kbd: var(--ink);
+  --tw-prose-kbd-shadows: var(--rule); /* 整个颜色值，不是 rgb() 里那三个分量 */
+  /*
+   * 代码块的底与字。**这两条不能不写**：typography 的默认值是一套「深底浅字」
+   * （pre-bg 近黑、pre-code 是 gray-200），而本站的代码块是浅底 —— 少了它们，
+   * 没被 Shiki 上色的 <pre>（纯文本围栏、Shiki 不认识的语言）就是白纸上的浅灰字，
+   * 几乎看不见。--surface 本来就是留给代码块的（见 tokens.css）。
+   */
+  --tw-prose-pre-bg: var(--surface);
+  --tw-prose-pre-code: var(--ink);
   max-width: none;
   font-size: var(--fs-body);
   line-height: var(--lh-body);
@@ -299,13 +315,30 @@ a.chip:hover {
   content: none;
 }
 
-/* Shiki 输出带内联样式的 <pre>，prose 的代码块底色要让位 */
+/* 内边距挪到里面那层 <code> 上（它才是横向滚动的那一层），外壳只管形状 */
 .prose pre {
-  background-color: transparent;
   padding: 0;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+/*
+ * Shiki 的双主题。它那边设了 `defaultColor: false`，于是每个 token 只带
+ * --shiki-light / --shiki-dark 两个变量，这里按 html[data-theme] 挑一档。
+ *
+ * 底色不跟着 Shiki 走（--shiki-light-bg 是纯白、--shiki-dark-bg 是 #24292e 的暖灰），
+ * 两个都和本站的纸不是一族，代码块会读成外来的一块方形。底色统一走上面那条
+ * --tw-prose-pre-bg（= --surface），只有字色借 Shiki 的主题。
+ */
+.prose .shiki,
+.prose .shiki span {
+  color: var(--shiki-light);
+}
+
+[data-theme='dark'] .prose .shiki,
+[data-theme='dark'] .prose .shiki span {
+  color: var(--shiki-dark);
 }
 
 .prose pre > code {
