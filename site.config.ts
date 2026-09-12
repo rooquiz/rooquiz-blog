@@ -35,6 +35,14 @@ export const site = {
     name: 'RooQuiz',
     /** Organization 节点的 logo（站内路径，JSON-LD 里再绝对化）。SVG 在 Google 支持的图片格式之内 */
     logo: '/brand/logo.svg',
+    /**
+     * 同一个组织在别处的主页，进 JSON-LD 的 `sameAs`。
+     * 它是实体消歧用的：搜索引擎与生成式检索靠这串链接确认「blog.rooquiz.com 上署名的
+     * RooQuiz」和「x.com 上那个 RooQuiz」是同一个主体。新开了账号就往这里加一条。
+     */
+    sameAs: ['https://x.com/rooquizteam'],
+    /** X 的用户名，进 `twitter:site` / `twitter:creator`。带 @，这是卡片规范要的形式 */
+    handle: '@rooquizteam',
   },
   defaultAuthor: 'RooQuiz Team',
 } as const

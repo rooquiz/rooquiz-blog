@@ -87,9 +87,12 @@ export function buildMetadata({
           locale: 'en_US',
           ...(images ? { images } : {}),
         },
-    // 卡片标题 / 描述不会自动从 openGraph 抄过来，要显式给
+    // 卡片标题 / 描述不会自动从 openGraph 抄过来，要显式给。
+    // site / creator 是归属：卡片上那行「@rooquizteam」，也是 X 那边把流量算回账号的依据
     twitter: {
       card: 'summary_large_image',
+      site: site.organization.handle,
+      creator: site.organization.handle,
       title: resolvedTitle,
       description: resolvedDescription,
       ...(images ? { images } : {}),

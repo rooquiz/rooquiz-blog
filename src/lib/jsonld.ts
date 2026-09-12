@@ -52,6 +52,8 @@ function organizationNode(): Node {
     name: site.organization.name,
     url: site.organization.url,
     logo: { '@type': 'ImageObject', url: absoluteUrl(site.organization.logo) },
+    // 同一实体在别处的主页。这串链接是给消歧用的，不是社交入口
+    sameAs: [...site.organization.sameAs],
   }
 }
 
