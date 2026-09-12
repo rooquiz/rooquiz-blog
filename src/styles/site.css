@@ -425,6 +425,24 @@ a.card:hover {
   translate: 0 -1px;
 }
 
+/*
+ * 箭头。Icons.tsx 里的 path 不带任何表现属性，尺寸与描边一律由用到它的那一处补
+ * （对照 .head__icon svg / .side__icon svg / .u-more svg）—— 这一处漏过一次：
+ * 不写 width/height 的内联 SVG 退到替换元素的默认 300×150，而 fill 的初始值是黑，
+ * 于是「上一页 / 下一页 / 回到列表」上撑出一个巨大的黑三角，把文字挤成三行。
+ * flex: none 是第二道保险：即便哪天换了更宽的图形，也只压文字不压它自己。
+ */
+.pager__link svg {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .pager__link[aria-disabled] {
   opacity: 0.4;
   pointer-events: none;
