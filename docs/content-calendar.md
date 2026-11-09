@@ -23,7 +23,6 @@
 | 10 | `benchmark-data-as-a-moat` | 攒够样本后，基准数据本身就是产品：怎么在报告里安全地用同行对比 | industry benchmark report | `benchmarks` `analytics` |
 | 11 | `hiring-assessment-that-predicts` | 招聘测评怎么设计才真的有预测力：能力维度拆解、题目与岗位的对应、避免的偏差 | pre employment assessment | `use-cases` `scoring` |
 | 12 | `quiz-copy-that-sounds-like-them` | 测验文案的第二人称写法：题干、选项、结果标签三层的语气统一 | quiz copywriting | `quiz-design` `conversion` |
-| 13 | `question-bank-for-exams-at-scale` | 题库怎么组织才撑得住反复出卷：分类、难度标记、随机抽题与防泄题 | exam question bank | `use-cases` `quiz-design` |
 | 14 | `translate-a-quiz-without-breaking-it` | 测验做多语言的实操：哪些内容必须逐条翻、哪些能复用、评分逻辑跨语言怎么保持一致 | multilingual quiz | `localization` `quiz-design` |
 | 15 | `result-page-cta-experiments` | 结果页 CTA 的五个可复制实验，以及每个实验需要多少样本才能看出差别 | landing page cta test | `conversion` `analytics` |
 | 16 | `funnel-analytics-questions-to-ask` | 拿到漏斗数据后该问的六个问题，附「这个数字异常说明什么」的对照表 | funnel analysis | `analytics` |
